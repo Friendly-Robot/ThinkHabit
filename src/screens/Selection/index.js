@@ -15,6 +15,8 @@ export default class Selection extends React.PureComponent {
     this.state = {
       habitSelected: '',
     }
+    this.handleSkip = this.handleSkip.bind(this);
+    this.handleStart = this.handleStart.bind(this);
   }
 
   render() {
@@ -31,7 +33,7 @@ export default class Selection extends React.PureComponent {
           <Text style={styles.title}>Select a Think Habit</Text>
           <TouchableOpacity
             activeOpacity={.8}
-            onPress={() => {}}
+            onPress={this.handleSkip}
           >
             <Text style={styles.skip}>Skip</Text>
           </TouchableOpacity>
@@ -131,7 +133,7 @@ export default class Selection extends React.PureComponent {
         </View>
         <TouchableOpacity
           activeOpacity={.8}
-          onPress={() => this.handleStart()}
+          onPress={this.handleStart}
           style={[styles.startButton, !habitSelected && { backgroundColor: colors.grey }]}
         >
           <Text style={styles.startText}>Start your Think Habit</Text>
@@ -150,20 +152,34 @@ export default class Selection extends React.PureComponent {
     }
   }
 
-  handleStart() {
-    const { habitSelected } = this.state;
-    const { toggleHabitProgress } = this.props;
-    if (habitSelected.length === 0) return;
-    this.props.toggleHabitProgress(habitSelected);
+  handleSkip() {
+    const { navigation } = this.props;
     const resetAction = StackActions.reset({
       index: 0,
       actions: [
         NavigationActions.navigate({
           routeName: 'AppNavigator',
-        })
+        }),
       ],
     });
-    this.props.navigation.dispatch(resetAction);
+    navigation.dispatch(resetAction);
+  }
+
+
+  handleStart() {
+    const { habitSelected } = this.state;
+    const { navigation, toggleHabitProgress } = this.props;
+    if (habitSelected.length === 0) return;
+    toggleHabitProgress(habitSelected);
+    const resetAction = StackActions.reset({
+      index: 0,
+      actions: [
+        NavigationActions.navigate({
+          routeName: 'AppNavigator',
+        }),
+      ],
+    });
+    navigation.dispatch(resetAction);
   }
 }
 
