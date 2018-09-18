@@ -38,6 +38,7 @@ Settings.schema = {
   properties: {
     badges: 'string[]',
     currDay: 'int',
+    currHabit: 'string?',
     daysInRow: 'int',
     joinDate: 'int',
     name: 'string?',
