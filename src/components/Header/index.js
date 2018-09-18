@@ -42,7 +42,7 @@ const styles = ScaledSheet.create({
     borderColor: colors.darkGrey,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    height: '65@ms',
+    height: '65@vs',
     paddingHorizontal: '15@ms',
   },
   menuIcon: {
