@@ -1,4 +1,4 @@
-import Realm from 'realm'
+import Realm from 'realm';
 
 class Habit extends Realm.Object {};
 Habit.schema = {
@@ -17,18 +17,12 @@ Habit.schema = {
   }
 };
 
-class Habits extends Realm.Object {};
-Habits.schema = {
-  name: 'Habits',
-  properties: {
-    list: { type: 'list', objectType: 'Pillar' },
-  }
-};
-
 class Pillar extends Realm.Object {};
 Pillar.schema = {
   name: 'Pillar',
+  primaryKey: 'id',
   properties: {
+    id: 'string',
     date: 'int',
     habit: 'string',
     stem: 'string',
@@ -38,18 +32,12 @@ Pillar.schema = {
   }
 };
 
-class Pillars extends Realm.Object {};
-Pillars.schema = {
-  name: 'Pillars',
-  properties: {
-    stems: { type: 'list', objectType: 'Pillar' },
-  }
-};
-
 class Settings extends Realm.Object {};
 Settings.schema = {
   name: 'Settings',
   properties: {
+    badges: 'string[]',
+    currDay: 'int',
     daysInRow: 'int',
     joinDate: 'int',
     name: 'string?',
@@ -59,9 +47,7 @@ Settings.schema = {
 
 const Schema = [
   Habit,
-  Habits,
   Pillar,
-  Pillars,
   Settings,
 ];
 
