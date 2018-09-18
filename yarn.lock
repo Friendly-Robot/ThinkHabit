@@ -4373,6 +4373,10 @@ react-native-screens@^1.0.0-alpha.10:
   version "1.0.0-alpha.11"
   resolved "https://registry.yarnpkg.com/react-native-screens/-/react-native-screens-1.0.0-alpha.11.tgz#4f4faeb5607b1e08cc70d76a04c2f8da0b241200"
 
+react-native-size-matters@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/react-native-size-matters/-/react-native-size-matters-0.1.3.tgz#1fe69603d04befe036b4fb9c4f57b9dafcbe59a6"
+
 react-native-tab-view@^0.0.77:
   version "0.0.77"
   resolved "https://registry.yarnpkg.com/react-native-tab-view/-/react-native-tab-view-0.0.77.tgz#11ceb8e7c23100d07e628dc151b57797524d00d4"
