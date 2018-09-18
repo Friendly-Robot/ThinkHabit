@@ -2,7 +2,7 @@ import React from 'react';
 import {
   View,
 } from 'react-native';
-import styles from './styles';
+// import styles from './styles';
 
 export default class Habits extends React.PureComponent {
   render() {
@@ -16,7 +16,7 @@ export default class Habits extends React.PureComponent {
 
 import { ScaledSheet } from 'react-native-size-matters';
 
-export default styles = ScaledSheet.create({
+const styles = ScaledSheet.create({
   container: {
     flex: 1,
   }
