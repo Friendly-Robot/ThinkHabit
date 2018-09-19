@@ -1143,7 +1143,7 @@ const stemStyles = ScaledSheet.create({
     borderWidth: 1,
     elevation: 2,
     height: '130@vs',
-    marginBottom: '15@vs',
+    marginBottom: '25@vs',
     padding: '15@ms',
     width: '90%',
   },
