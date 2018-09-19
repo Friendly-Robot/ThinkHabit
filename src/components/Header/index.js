@@ -25,6 +25,7 @@ export default class Header extends React.PureComponent {
           backArrow && 
           <TouchableOpacity
             activeOpacity={.8}
+            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
             onPress={this.handleBack}
             style={styles.caret}
           >
@@ -34,6 +35,7 @@ export default class Header extends React.PureComponent {
         <Text style={[styles.title, backArrow && styles.backTitle]}>Think Habit</Text>
         <TouchableOpacity
           activeOpacity={.8}
+          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
           onPress={this.handleMenu}
           style={styles.menu}
         >
