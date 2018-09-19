@@ -52,5 +52,6 @@ const styles = ScaledSheet.create({
   title: {
     color: colors.primary,
     fontSize: fonts.large,
+    fontWeight: 'bold',
   },
 })

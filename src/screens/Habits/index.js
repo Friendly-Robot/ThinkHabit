@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
+import data from '../../config/data';
 import { colors, fonts, height } from '../../config/styles';
 import Header from '../../components/Header';
 import Swiper from 'react-native-swiper';
@@ -1030,7 +1031,7 @@ const styles = ScaledSheet.create({
   },
   habit: {
     color: '#FFFFFF',
-    fontSize: fonts.medium,
+    fontSize: fonts.large,
   },
   habitContainer: {
     flex: 1,
@@ -1061,7 +1062,7 @@ const styles = ScaledSheet.create({
     color: '#FFFFFF',
     fontSize: fonts.medium,
     fontWeight: 'bold',
-    marginBottom: '5@vs',
+    marginBottom: '10@vs',
   },
   mainContainer: {
     backgroundColor: '#FFFFFF',
