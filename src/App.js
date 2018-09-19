@@ -34,6 +34,7 @@ const HabitsNavigator = createStackNavigator({
           reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
           thinkNotificationTime={props.screenProps.Settings.thinkNotificationTime}
           thinkNotificationDay={props.screenProps.Settings.thinkNotificationDay}
+          retrieveStemFromRealm={props.screenProps.retrieveStemFromRealm}
           updateHabitSettings={props.screenProps.updateHabitSettings}
         />
       )
@@ -42,7 +43,9 @@ const HabitsNavigator = createStackNavigator({
   'Stem': {
     screen: function(props) {
       return (
-        <Stem/>
+        <Stem
+          navigation={props.navigation}
+        />
       )
     }
   },
@@ -142,6 +145,7 @@ export default class App extends React.Component {
       Courage: {},
       Freedom: {},
     }
+    this.retrieveStemFromRealm = this.retrieveStemFromRealm.bind(this);
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
   }
@@ -173,6 +177,7 @@ export default class App extends React.Component {
           Courage,
           Freedom,
 
+          retrieveStemFromRealm: this.retrieveStemFromRealm,
           toggleHabitProgress: this.toggleHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
         }}
@@ -353,6 +358,15 @@ export default class App extends React.Component {
         Settings['thinkNotificationDay'] = object['thinkNotificationDay'];
         this.setState({ Settings });
       });
+    });
+  }
+
+  retrieveStemFromRealm(id) {
+    return Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const aux = realm.objectForPrimaryKey('Stem', id);
+      const ref = aux;
+      return ref;
     });
   }
 }
