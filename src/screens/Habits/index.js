@@ -40,6 +40,7 @@ export default class Habits extends React.PureComponent {
     this.handleRepeatInc = this.handleRepeatInc.bind(this);
     this.handleRepeatDec = this.handleRepeatDec.bind(this);
     this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
+    this.handleSettingsUpdate = this.handleSettingsUpdate.bind(this);
     this.scrollRight = this.scrollRight.bind(this);
   }
 
@@ -54,6 +55,13 @@ export default class Habits extends React.PureComponent {
       // currHabit,
       habitSeq,
       navigation,
+      // numberOfStemsPerDay,
+      // repeat,
+      // reflectNotificationTime, 
+      // reflectNotificationDay, 
+      // thinkNotificationTime, 
+      // thinkNotificationDay,
+      // updateHabitSettings,
     } = this.props;
 
     const {
@@ -98,6 +106,7 @@ export default class Habits extends React.PureComponent {
               displaySettings ?
               <TouchableOpacity
                 activeOpacity={.8}
+                onPress={this.handleSettingsUpdate}
                 style={styles.nextContainer}
               >
                 <Text style={[styles.save, save && { color: colors.secondary }]}>Save</Text>
@@ -395,7 +404,7 @@ export default class Habits extends React.PureComponent {
                     onPress={this.functions['TND5']}
                     style={[styles.timeButton, styles.dayButton, TND[5] && { backgroundColor: colors.secondary }]}
                   >
-                    <Text style={[styles.timeText, TND[5] && { color: '#FFFFFF' }]}>Thu</Text>
+                    <Text style={[styles.timeText, TND[5] && { color: '#FFFFFF' }]}>Fri</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     activeOpacity={.8}
@@ -624,7 +633,7 @@ export default class Habits extends React.PureComponent {
                     onPress={this.functions['RND5']}
                     style={[styles.timeButton, styles.dayButton, RND[5] && { backgroundColor: colors.secondary }]}
                   >
-                    <Text style={[styles.timeText, RND[5] && { color: '#FFFFFF' }]}>Thu</Text>
+                    <Text style={[styles.timeText, RND[5] && { color: '#FFFFFF' }]}>Fri</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     activeOpacity={.8}
@@ -668,6 +677,7 @@ export default class Habits extends React.PureComponent {
   }
 
   componentDidMount() {
+    console.log('props', this.props)
     this.initNotificationData();
     this.initFunctions();
   }
@@ -791,7 +801,7 @@ export default class Habits extends React.PureComponent {
     }
     this.setState({ displaySettings: !displaySettings }, () => {
       if (!this.state.displaySettings && this.state.save) {
-        this.initNotificationData();
+        setTimeout(() => this.initNotificationData(), 1000);
         this.setState({
           inProgress: this.props.currHabit === this.props.habitSeq[this.state.index],
           numberOfStemsPerDay: this.props.numberOfStemsPerDay,
@@ -892,6 +902,61 @@ export default class Habits extends React.PureComponent {
       updatedRND[day] = true;
       this.setState({ RND: updatedRND, save: true });
     }
+  }
+
+  handleSettingsUpdate() {
+    const { currHabit, habitSeq, updateHabitSettings } = this.props;
+    const { 
+      index,
+      inProgress,
+      numberOfStemsPerDay,
+      repeat,
+      RNT,
+      RND,
+      TNT,
+      TND,
+    } = this.state;
+    const reflectNotificationTime = [];
+    const reflectNotificationDay = [];
+    const thinkNotificationTime = [];
+    const thinkNotificationDay = [];
+    for (let time in RNT) {
+      reflectNotificationTime.push(parseInt(time))
+    }
+    reflectNotificationTime.sort(function(a, b){return a-b});
+    for (let day in RND) {
+      reflectNotificationDay.push(parseInt(day))
+    }
+    reflectNotificationDay.sort(function(a, b){return a-b});
+    for (let time in TNT) {
+      thinkNotificationTime.push(parseInt(time))
+    }
+    thinkNotificationTime.sort(function(a, b){return a-b});
+    for (let day in TND) {
+      thinkNotificationDay.push(parseInt(day))
+    }
+    thinkNotificationDay.sort(function(a, b){return a-b});
+    let updatedCurrHabit = '';
+    if (inProgress) updatedCurrHabit = habitSeq[index];
+    if (!inProgress && currHabit === habitSeq[index]) updatedCurrHabit = '';
+    if (!inProgress && index !== 0 && currHabit) updatedCurrHabit = currHabit;
+    const updatedHabitSeq = [...habitSeq];
+    if (updatedCurrHabit !== currHabit && updatedCurrHabit) {
+      updatedHabitSeq.splice(updatedHabitSeq.indexOf(updatedCurrHabit), 1);
+      updatedHabitSeq.unshift(updatedCurrHabit);
+    }
+    const updatedSettings = {
+      currHabit: updatedCurrHabit,
+      habitSeq: updatedHabitSeq,
+      numberOfStemsPerDay,
+      repeat,
+      reflectNotificationTime,
+      reflectNotificationDay,
+      thinkNotificationTime,
+      thinkNotificationDay,
+    };
+    updateHabitSettings(updatedSettings);
+    this.toggleSettings();
   }
 
   handleSwiperUpdate() {

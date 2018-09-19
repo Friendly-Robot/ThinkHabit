@@ -34,6 +34,7 @@ const HabitsNavigator = createStackNavigator({
           reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
           thinkNotificationTime={props.screenProps.Settings.thinkNotificationTime}
           thinkNotificationDay={props.screenProps.Settings.thinkNotificationDay}
+          updateHabitSettings={props.screenProps.updateHabitSettings}
         />
       )
     }
@@ -142,6 +143,7 @@ export default class App extends React.Component {
       Freedom: {},
     }
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
+    this.updateHabitSettings = this.updateHabitSettings.bind(this);
   }
 
   render() {
@@ -172,6 +174,7 @@ export default class App extends React.Component {
           Freedom,
 
           toggleHabitProgress: this.toggleHabitProgress,
+          updateHabitSettings: this.updateHabitSettings,
         }}
       />
     );
@@ -322,7 +325,7 @@ export default class App extends React.Component {
     const habitSeq = updatedState.Settings.habitSeq;
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
-      const Settings = realm.objects('Settings');
+      const Settings = realm.objects('Settings')[0];
       realm.write(() => {
         habitSeq.splice(habitSeq.indexOf(habit), 1);
         habitSeq.unshift(habit);
@@ -335,7 +338,21 @@ export default class App extends React.Component {
     });
   }
 
-  updateHabit() {
-
+  updateHabitSettings(object) {
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const Settings = realm.objects('Settings')[0];
+      realm.write(() => {
+        Settings['currHabit'] = object['currHabit'];
+        Settings['habitSeq'] = object['habitSeq'];
+        Settings['numberOfStemsPerDay'] = object['numberOfStemsPerDay'];
+        Settings['repeat'] = object['repeat'];
+        Settings['reflectNotificationTime'] = object['reflectNotificationTime'];
+        Settings['reflectNotificationDay'] = object['reflectNotificationDay'];
+        Settings['thinkNotificationTime'] = object['thinkNotificationTime'];
+        Settings['thinkNotificationDay'] = object['thinkNotificationDay'];
+        this.setState({ Settings });
+      });
+    });
   }
 }
