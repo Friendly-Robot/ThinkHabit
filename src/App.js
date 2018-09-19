@@ -28,6 +28,12 @@ const HabitsNavigator = createStackNavigator({
           currHabit={props.screenProps.Settings.currHabit}
           habitSeq={props.screenProps.Settings.habitSeq}
           navigation={props.navigation}
+          numberOfStemsPerDay={props.screenProps.Settings.numberOfStemsPerDay}
+          repeat={props.screenProps.Settings.repeat}
+          reflectNotificationTime={props.screenProps.Settings.reflectNotificationTime}
+          reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
+          thinkNotificationTime={props.screenProps.Settings.thinkNotificationTime}
+          thinkNotificationDay={props.screenProps.Settings.thinkNotificationDay}
         />
       )
     }
@@ -261,25 +267,53 @@ export default class App extends React.Component {
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       realm.write(() => {
-        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Confidence', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay });
-        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Meditation', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay });
-        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Relationships', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay });
-        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Responsibility', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay });
-        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Courage', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay });
-        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Freedom', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay });
-        realm.create('Settings', { currDay, currHabit: '', daysInRow: 0, habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'], joinDate, name: '', picture: '' });
+        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Confidence' });
+        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Meditation' });
+        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Relationships' });
+        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Responsibility' });
+        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Courage' });
+        realm.create('Habit', { completedStemCount: 0, completedStems: [], name: 'Freedom' });
+        realm.create('Settings', { 
+          currDay, 
+          currHabit: '', 
+          daysInRow: 0, 
+          habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'], 
+          joinDate, 
+          name: '', 
+          numberOfStemsPerDay: 1, 
+          picture: '',
+          repeat: 3, 
+          reflectNotificationTime, 
+          reflectNotificationDay, 
+          thinkNotificationTime, 
+          thinkNotificationDay,
+        });
       });
     });
     this.setState({
       appReady: true,
       appSet: false,
-      Settings: { currDay, currHabit: '', daysInRow: 0, habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'], joinDate, name: '', picture: '' },
-      Confidence: { completedStemCount: 0, completedStems: [], name: 'Confidence', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay },
-      Meditation: { completedStemCount: 0, completedStems: [], name: 'Meditation', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay },
-      Relationships: { completedStemCount: 0, completedStems: [], name: 'Relationships', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay },
-      Responsibility: { completedStemCount: 0, completedStems: [], name: 'Responsibility', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay },
-      Courage: { completedStemCount: 0, completedStems: [], name: 'Courage', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay },
-      Freedom: { completedStemCount: 0, completedStems: [], name: 'Freedom', numberOfStemsPerDay: 1, repeat: 3, reflectNotificationTime, reflectNotificationDay, thinkNotificationTime, thinkNotificationDay },
+      Settings: { 
+        currDay,
+        currHabit: '',
+        daysInRow: 0,
+        habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
+        joinDate,
+        name: '',
+        numberOfStemsPerDay: 1,
+        picture: '',
+        repeat: 3, 
+        reflectNotificationTime, 
+        reflectNotificationDay,
+        thinkNotificationTime,
+        thinkNotificationDay,
+      },
+      Confidence: { completedStemCount: 0, completedStems: [], name: 'Confidence' },
+      Meditation: { completedStemCount: 0, completedStems: [], name: 'Meditation' },
+      Relationships: { completedStemCount: 0, completedStems: [], name: 'Relationships' },
+      Responsibility: { completedStemCount: 0, completedStems: [], name: 'Responsibility' },
+      Courage: { completedStemCount: 0, completedStems: [], name: 'Courage' },
+      Freedom: { completedStemCount: 0, completedStems: [], name: 'Freedom' },
     });
   }
 
@@ -299,5 +333,9 @@ export default class App extends React.Component {
         Settings['habitSeq'] = habitSeq;
       });
     });
+  }
+
+  updateHabit() {
+
   }
 }

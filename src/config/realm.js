@@ -7,12 +7,6 @@ Habit.schema = {
     completedStemCount: 'int',
     completedStems: 'string[]',
     name: 'string',
-    numberOfStemsPerDay: 'int',
-    repeat: 'int',
-    reflectNotificationTime: 'int[]',
-    reflectNotificationDay: 'int[]',
-    thinkNotificationTime: 'int[]',
-    thinkNotificationDay: 'int[]',
   }
 };
 
@@ -42,7 +36,13 @@ Settings.schema = {
     habitSeq: 'string[]',
     joinDate: 'int',
     name: 'string?',
+    numberOfStemsPerDay: 'int',
     picture: 'string?',
+    repeat: 'int',
+    reflectNotificationTime: 'int[]',
+    reflectNotificationDay: 'int[]',
+    thinkNotificationTime: 'int[]',
+    thinkNotificationDay: 'int[]',
   }
 };
 
