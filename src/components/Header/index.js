@@ -5,26 +5,46 @@ import {
   View,
 } from 'react-native';
 import { colors, fonts } from '../../config/styles';
-import Eicon from 'react-native-vector-icons/Entypo'
+import Aicon from 'react-native-vector-icons/FontAwesome';
+import Eicon from 'react-native-vector-icons/Entypo';
 
 export default class Header extends React.PureComponent {
   constructor() {
     super();
+    this.handleBack = this.handleBack.bind(this);
     this.handleMenu = this.handleMenu.bind(this);
   }
   render() {
-    // const { navigation } = this.props;
+    const { 
+      backArrow,
+      // navigation,
+    } = this.props;
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Think Habit</Text>
+        { 
+          backArrow && 
+          <TouchableOpacity
+            activeOpacity={.8}
+            onPress={this.handleBack}
+            style={styles.caret}
+          >
+            <Aicon name={'caret-left'} style={styles.caretIcon} /> 
+          </TouchableOpacity>
+        }
+        <Text style={[styles.title, backArrow && styles.backTitle]}>Think Habit</Text>
         <TouchableOpacity
           activeOpacity={.8}
           onPress={this.handleMenu}
+          style={styles.menu}
         >
           <Eicon name={'menu'} style={styles.menuIcon} />
         </TouchableOpacity>
       </View>
     )
+  }
+
+  handleBack() {
+    this.props.navigation.goBack();
   }
 
   handleMenu() {
@@ -35,6 +55,17 @@ export default class Header extends React.PureComponent {
 import { ScaledSheet } from 'react-native-size-matters';
 
 const styles = ScaledSheet.create({
+  backTitle: {
+    left: '45@ms',
+  },
+  caret: {
+    left: '15@ms',
+    position: 'absolute',
+  },
+  caretIcon: {
+    color: colors.primary,
+    fontSize: fonts.large,
+  },
   container: {
     alignItems: 'center',
     alignSelf: 'stretch',
@@ -45,6 +76,10 @@ const styles = ScaledSheet.create({
     height: '65@vs',
     paddingHorizontal: '15@ms',
   },
+  menu: {
+    position: 'absolute',
+    right: '15@ms',
+  },
   menuIcon: {
     color: colors.darkGrey,
     fontSize: fonts.large,
@@ -53,5 +88,7 @@ const styles = ScaledSheet.create({
     color: colors.primary,
     fontSize: fonts.large,
     fontWeight: 'bold',
+    left: '15@ms',
+    position: 'absolute',
   },
 })
