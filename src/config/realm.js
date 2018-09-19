@@ -10,9 +10,9 @@ Habit.schema = {
   }
 };
 
-class Pillar extends Realm.Object {};
-Pillar.schema = {
-  name: 'Pillar',
+class Stem extends Realm.Object {};
+Stem.schema = {
+  name: 'Stem',
   primaryKey: 'id',
   properties: {
     id: 'string',
@@ -20,8 +20,7 @@ Pillar.schema = {
     habit: 'string',
     stem: 'string',
     thoughts: 'string[]',
-    track: 'int',
-    reflection: 'string?',
+    reflections: 'string[]',
   }
 };
 
@@ -48,7 +47,7 @@ Settings.schema = {
 
 const Schema = [
   Habit,
-  Pillar,
+  Stem,
   Settings,
 ];
 
