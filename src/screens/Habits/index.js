@@ -13,9 +13,33 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { verticalScale } from 'react-native-size-matters';
 
 export default class Habits extends React.PureComponent {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
+    this.vs65 = verticalScale(65);
+    this.vs250 = height - this.vs65;
+    this.animatedHeight = new Animated.Value(this.vs65);
+    this.functions = {};
+    this.manualProgressSwitch;
     this.swiper;
+    this.state = {
+      displaySettings: false,
+      index: 0,
+      inProgress: props.currHabit === props.habitSeq[0],
+      numberOfStemsPerDay: props.numberOfStemsPerDay,
+      repeat: props.repeat,
+      save: false,
+      RNT: {},
+      RND: {},
+      TNT: {},
+      TND: {},
+    }
+    this.toggleSettings = this.toggleSettings.bind(this);
+    this.toggleProgress = this.toggleProgress.bind(this);
+    this.handleStemInc = this.handleStemInc.bind(this);
+    this.handleStemDec = this.handleStemDec.bind(this);
+    this.handleRepeatInc = this.handleRepeatInc.bind(this);
+    this.handleRepeatDec = this.handleRepeatDec.bind(this);
+    this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
     this.scrollRight = this.scrollRight.bind(this);
   }
 
@@ -27,103 +51,33 @@ export default class Habits extends React.PureComponent {
       // Responsibility,
       // Courage,
       // Freedom,
-      currHabit,
+      // currHabit,
       habitSeq,
       navigation,
     } = this.props;
 
-    return (
-      <View style={styles.mainContainer}>
-        <Header navigation={navigation} />
-        <Swiper
-          horizontal={true}
-          index={0}
-          loadMinimal={true}
-          loop={true}
-          ref={(ref) => this.swiper = ref}
-          showsPagination={false}
-          style={styles.swiper}
-        >
-          {
-            habitSeq.map((habit) => (
-              <Habit
-                currHabit={currHabit}
-                habitData={this.props[habit]}
-                key={habit}
-                scrollRight={this.scrollRight} 
-              />
-            ))
-          }
-        </Swiper>
-      </View>
-    )
-  }
-
-  componentDidMount() {
-    console.log('props', this.props)
-  }
-
-  scrollRight() {
-    if (this.swiper.state.index === 5) {
-      this.swiper.scrollBy(-5);
-    } else {
-      this.swiper.scrollBy(1);
-    }
-  }
-}
-
-class Habit extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.vs65 = verticalScale(65);
-    this.vs250 = height - this.vs65;
-    this.animatedHeight = new Animated.Value(this.vs65);
-    this.functions = {};
-    this.state = {
-      displaySettings: false,
-      inProgress: props.currHabit === props.habitData.name,
-      numberOfStemsPerDay: props.habitData.numberOfStemsPerDay,
-      repeat: props.habitData.repeat,
-      RNT: {},
-      RND: {},
-      TNT: {},
-      TND: {},
-    }
-    this.toggleSettings = this.toggleSettings.bind(this);
-  }
-
-  render() {
     const {
       displaySettings,
+      index,
       inProgress,
       numberOfStemsPerDay,
       repeat,
+      save,
       RNT,
       RND,
       TNT,
       TND,
     } = this.state;
 
-    const {
-      // currHabit,
-      habitData,
-      scrollRight,
-    } = this.props;
-
     // const {
     //   completedStemCount: 'int',
     //   completedStems: 'string[]',
     //   name: 'string',
-    //   numberOfStemsPerDay: 'int',
-    //   repeat: 'int',
-    //   reflectNotificationTime: 'int[]',
-    //   reflectNotificationDay: 'int[]',
-    //   thinkNotificationTime: 'int[]',
-    //   thinkNotificationDay: 'int[]',
-    // } = this.props.habitData;
+    // } = this.props.habit;
 
     return (
-      <View style={styles.habitContainer}>
+      <View style={styles.mainContainer}>
+        <Header navigation={navigation} />
         <Animated.View style={this.animatedHabit()}>
           <View style={styles.settingsHeader}>
             <TouchableOpacity
@@ -139,20 +93,20 @@ class Habit extends React.PureComponent {
                 <Aicon name={'caret-down'} style={styles.caret} />
               }
             </TouchableOpacity>
-            <Text style={styles.habit}>{ habitData['name'] }</Text>
+            <Text style={styles.habit}>{ habitSeq[index] }</Text>
             {
               displaySettings ?
               <TouchableOpacity
                 activeOpacity={.8}
                 style={styles.nextContainer}
               >
-                <Text style={styles.save}>Save</Text>
+                <Text style={[styles.save, save && { color: colors.secondary }]}>Save</Text>
               </TouchableOpacity>
               :
               <TouchableOpacity
                 activeOpacity={.8}
                 hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
-                onPress={scrollRight}
+                onPress={this.scrollRight}
                 style={styles.nextContainer}
               >
                 <Aicon name={'arrow-circle-right'} style={styles.nextIcon} />
@@ -162,7 +116,8 @@ class Habit extends React.PureComponent {
           <View style={styles.progress}>
             <TouchableOpacity
               activeOpacity={.8}
-              onPress={() => {}} 
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+              onPress={this.toggleProgress} 
               style={styles.checkbox}
             >
               { inProgress && <Aicon name={'check'} style={styles.x} />}
@@ -172,7 +127,7 @@ class Habit extends React.PureComponent {
                 inProgress ?
                 `currently in progress`
                 :
-                `currently disabled`
+                `disabled`
               }
             </Text>
           </View>
@@ -185,7 +140,8 @@ class Habit extends React.PureComponent {
                 <View style={styles.incButtons}>
                   <TouchableOpacity
                     activeOpacity={.8}
-                    onPress={() => {}}
+                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                    onPress={this.handleStemDec}
                     style={styles.incButton}
                   >
                     <Aicon name={'minus'} style={styles.incIcon} />
@@ -195,7 +151,8 @@ class Habit extends React.PureComponent {
 
                   <TouchableOpacity
                     activeOpacity={.8}
-                    onPress={() => {}}
+                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                    onPress={this.handleStemInc}
                     style={styles.incButton}
                   >
                     <Aicon name={'plus'} style={styles.incIcon} />
@@ -207,7 +164,8 @@ class Habit extends React.PureComponent {
                 <View style={styles.incButtons}>
                   <TouchableOpacity
                     activeOpacity={.8}
-                    onPress={() => {}}
+                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                    onPress={this.handleRepeatDec}
                     style={styles.incButton}
                   >
                     <Aicon name={'minus'} style={styles.incIcon} />
@@ -217,7 +175,8 @@ class Habit extends React.PureComponent {
 
                   <TouchableOpacity
                     activeOpacity={.8}
-                    onPress={() => {}}
+                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                    onPress={this.handleRepeatInc}
                     style={styles.incButton}
                   >
                     <Aicon name={'plus'} style={styles.incIcon} />
@@ -686,22 +645,40 @@ class Habit extends React.PureComponent {
             </View>
           }
         </Animated.View>
-        <KeyboardAwareScrollView
-          style={styles.scrollview}
+        <Swiper
+          horizontal={true}
+          index={0}
+          loadMinimal={true}
+          loop={true}
+          onMomentumScrollEnd={this.handleSwiperUpdate}
+          ref={(ref) => this.swiper = ref}
+          showsPagination={false}
+          style={styles.swiper}
         >
-        
-        </KeyboardAwareScrollView>
+          {
+            habitSeq.map((habit) => (
+              <Habit
+                key={habit}
+              />
+            ))
+          }
+        </Swiper>
       </View>
     )
   }
 
   componentDidMount() {
+    this.initNotificationData();
+    this.initFunctions();
+  }
+
+  initNotificationData() {
     const { 
       reflectNotificationTime,
       reflectNotificationDay,
       thinkNotificationTime,
       thinkNotificationDay,
-    } = this.props.habitData;
+    } = this.props;
     const RNT = {};
     const RND = {};
     const TNT = {};
@@ -719,7 +696,6 @@ class Habit extends React.PureComponent {
       TND[day] = true;
     });
     this.setState({ RNT, RND, TNT, TND });
-    this.initFunctions();
   }
 
   initFunctions() {
@@ -809,11 +785,61 @@ class Habit extends React.PureComponent {
       Animated.timing(
         this.animatedHeight, {
           toValue: this.vs250,
-          duration: 500,
+          duration: 400,
         }
       ).start();
     }
-    this.setState({ displaySettings: !displaySettings });
+    this.setState({ displaySettings: !displaySettings }, () => {
+      if (!this.state.displaySettings && this.state.save) {
+        this.initNotificationData();
+        this.setState({
+          inProgress: this.props.currHabit === this.props.habitSeq[this.state.index],
+          numberOfStemsPerDay: this.props.numberOfStemsPerDay,
+          repeat: this.props.repeat,
+          save: false,
+        });
+      }
+    });
+  }
+
+  toggleProgress() {
+    const { inProgress } = this.state;
+    this.setState({ inProgress: !inProgress, save: true });
+  }
+
+  handleStemInc() {
+    const { numberOfStemsPerDay } = this.state;
+    if (this.manualProgressSwitch) {
+      this.manualProgressSwitch = false;
+      this.setState({ numberOfStemsPerDay: numberOfStemsPerDay + 1, inProgress: true, save: true });
+      return;      
+    }
+    this.setState({ numberOfStemsPerDay: numberOfStemsPerDay + 1, save: true });
+  }
+
+  handleStemDec() {
+    const { inProgress, numberOfStemsPerDay } = this.state;
+    if (numberOfStemsPerDay - 1 <= 0 ) {
+      if (inProgress) {
+        this.manualProgressSwitch = true;
+        this.setState({ numberOfStemsPerDay: 0, inProgress: false, save: true });
+      } else {
+        this.setState({ numberOfStemsPerDay: 0, save: true });        
+      }
+      return;
+    }
+    this.setState({ numberOfStemsPerDay: numberOfStemsPerDay - 1, save: true });
+  }
+
+  handleRepeatInc() {
+    const { repeat } = this.state;
+    this.setState({ repeat: repeat + 1, save: true });
+  }
+
+  handleRepeatDec() {
+    const { repeat } = this.state;
+    if (repeat - 1 < 0) return;
+    this.setState({ repeat: repeat - 1, save: true });
   }
 
   toggleTNT(time) {
@@ -821,11 +847,11 @@ class Habit extends React.PureComponent {
     if (TNT[time]) {
       const updatedTNT = {...TNT};
       delete updatedTNT[time];
-      this.setState({ TNT: updatedTNT });
+      this.setState({ TNT: updatedTNT, save: true });
     } else {
       const updatedTNT = {...TNT};
       updatedTNT[time] = true;
-      this.setState({ TNT: updatedTNT });
+      this.setState({ TNT: updatedTNT, save: true });
     }
   }
 
@@ -834,11 +860,11 @@ class Habit extends React.PureComponent {
     if (TND[day]) {
       const updatedTND = {...TND};
       delete updatedTND[day];
-      this.setState({ TND: updatedTND });
+      this.setState({ TND: updatedTND, save: true });
     } else {
       const updatedTND = {...TND};
       updatedTND[day] = true;
-      this.setState({ TND: updatedTND });
+      this.setState({ TND: updatedTND, save: true });
     }
   }
 
@@ -847,11 +873,11 @@ class Habit extends React.PureComponent {
     if (RNT[time]) {
       const updatedRNT = {...RNT};
       delete updatedRNT[time];
-      this.setState({ RNT: updatedRNT });
+      this.setState({ RNT: updatedRNT, save: true });
     } else {
       const updatedRNT = {...RNT};
       updatedRNT[time] = true;
-      this.setState({ RNT: updatedRNT });
+      this.setState({ RNT: updatedRNT, save: true });
     }
   }
 
@@ -860,13 +886,52 @@ class Habit extends React.PureComponent {
     if (RND[day]) {
       const updatedRND = {...RND};
       delete updatedRND[day];
-      this.setState({ RND: updatedRND });
+      this.setState({ RND: updatedRND, save: true });
     } else {
       const updatedRND = {...RND};
       updatedRND[day] = true;
-      this.setState({ RND: updatedRND });
+      this.setState({ RND: updatedRND, save: true });
     }
   }
+
+  handleSwiperUpdate() {
+    const { index } = this.swiper.state;
+    const { currHabit, habitSeq } = this.props;
+    this.setState({ 
+      index,
+      inProgress: currHabit === habitSeq[index],
+    });
+  }
+
+  scrollRight() {
+    if (this.swiper.state.index === 5) {
+      this.swiper.scrollBy(-5);
+    } else {
+      this.swiper.scrollBy(1);
+    }
+  }
+}
+
+class Habit extends React.PureComponent {
+  render() {
+
+
+    const {
+
+    } = this.props;
+
+    return (
+
+        <KeyboardAwareScrollView
+          style={styles.scrollview}
+        >
+        
+        </KeyboardAwareScrollView>
+
+    )
+  }
+
+
 }
 
 import { ScaledSheet } from 'react-native-size-matters';
