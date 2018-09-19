@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Animated,
+  FlatList,
   View,
   Text,
   TouchableOpacity,
@@ -10,8 +11,9 @@ import { colors, fonts, height } from '../../config/styles';
 import Header from '../../components/Header';
 import Swiper from 'react-native-swiper';
 import Aicon from 'react-native-vector-icons/FontAwesome';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { verticalScale } from 'react-native-size-matters';
+import { NavigationActions, StackActions } from 'react-navigation';
+
 
 export default class Habits extends React.PureComponent {
   constructor(props) {
@@ -34,6 +36,7 @@ export default class Habits extends React.PureComponent {
       TNT: {},
       TND: {},
     }
+    this.navigateToStem = this.navigateToStem.bind(this);
     this.toggleSettings = this.toggleSettings.bind(this);
     this.toggleProgress = this.toggleProgress.bind(this);
     this.handleStemInc = this.handleStemInc.bind(this);
@@ -62,6 +65,7 @@ export default class Habits extends React.PureComponent {
       // reflectNotificationDay, 
       // thinkNotificationTime, 
       // thinkNotificationDay,
+      retrieveStemFromRealm,
       // updateHabitSettings,
     } = this.props;
 
@@ -668,7 +672,11 @@ export default class Habits extends React.PureComponent {
           {
             habitSeq.map((habit) => (
               <Habit
+                completedStems={this.props[habit]['completedStems']}
+                data={data[habit]}
                 key={habit}
+                navigateToStem={this.navigateToStem}
+                retrieveStemFromRealm={retrieveStemFromRealm}
               />
             ))
           }
@@ -678,7 +686,6 @@ export default class Habits extends React.PureComponent {
   }
 
   componentDidMount() {
-    console.log('props', this.props)
     this.initNotificationData();
     this.initFunctions();
   }
@@ -789,14 +796,14 @@ export default class Habits extends React.PureComponent {
       Animated.timing(
         this.animatedHeight, {
           toValue: this.vs65,
-          duration: 750,
+          duration: 400,
         }
       ).start();
     } else {
       Animated.timing(
         this.animatedHeight, {
           toValue: this.vs250,
-          duration: 400,
+          duration: 750,
         }
       ).start();
     }
@@ -976,31 +983,198 @@ export default class Habits extends React.PureComponent {
       this.swiper.scrollBy(1);
     }
   }
+
+  navigateToStem(data) {
+    this.props.navigation.navigate('Stem', data);
+  }
 }
 
 class Habit extends React.PureComponent {
+  constructor() {
+    super();
+    this._keyExtractor = this._keyExtractor.bind(this);
+    this._renderItem = this._renderItem.bind(this);
+    this._getItemLayout = this._getItemLayout.bind(this);
+  }
   render() {
-
-
     const {
-
+      // completedStems,
+      data,
+      // retrieveStemFromRealm,
     } = this.props;
 
     return (
-
-        <KeyboardAwareScrollView
-          style={styles.scrollview}
-        >
-        
-        </KeyboardAwareScrollView>
-
+      <FlatList
+        contentContainerStyle={stemStyles.scrollview}
+        data={data}
+        getItemLayout={this._getItemLayout}
+        initialNumToRender={5}
+        keyExtractor={this._keyExtractor}
+        removeClippedSubviews={true}
+        renderItem={this._renderItem}
+      />
     )
   }
 
+  _keyExtractor(item) {
+    return item.id;
+  }
 
+  _renderItem({item}) {
+    const { completedStems, navigateToStem, retrieveStemFromRealm } = this.props;
+    return (
+      <StemCard
+        completed={completedStems.indexOf(item.id) >= 0 ? true : false}
+        navigateToStem={navigateToStem}
+        retrieveStemFromRealm={retrieveStemFromRealm}
+        stem={item}
+      />
+    )
+  }
+
+  _getItemLayout(data, index) {
+    const value = verticalScale(130);
+    return {length: value, offset: value * index, index};
+  }
+}
+
+class StemCard extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.realmStem = props.completed && props.retrieveStemFromRealm(props.stem.id);
+    this.handleThink = this.handleThink.bind(this);
+  }
+
+  render() {
+    const {
+      completed,
+      // navigateToStem,
+      // retrieveStemFromRealm,
+      stem,
+    } = this.props;
+
+    return (
+      <View style={stemStyles.container}>
+        <View style={stemStyles.stemContainer}>
+          <Text style={stemStyles.stemUpper}>{ stem.stem.substr(0, stem.stem.indexOf(' ')) }</Text>
+          <Text style={stemStyles.stem}>{ stem.stem.substr(stem.stem.indexOf(' ')) }</Text>
+        </View>
+        <View style={stemStyles.bottomContainer}>
+          <Text style={stemStyles.thoughts}>
+            { this.realmStem && this.realmStem['thoughts'].length ? `${this.realmStem['thoughts'].length} thoughts` : null }
+          </Text>
+          <View style={stemStyles.buttons}>
+            <TouchableOpacity
+              activeOpacity={.8}
+              onPress={() => {}}
+              style={stemStyles.button}
+            >
+              <Text style={stemStyles.buttonText}>Queue</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={.8}
+              onPress={this.handleThink}
+              style={[stemStyles.button, stemStyles.buttonMain, completed && stemStyles.completedBorder]}
+            >
+              <Text style={[stemStyles.buttonText, stemStyles.buttonMainText, completed && stemStyles.completedText]}>{ completed ? `Reflect` : `Think` }</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    )
+  }
+
+  handleThink() {
+    const { completed, navigateToStem, stem } = this.props;
+    if (completed) {
+      navigateToStem(this.realmStem);
+    } else {
+      navigateToStem(stem);
+    }
+  }
 }
 
 import { ScaledSheet } from 'react-native-size-matters';
+
+const stemStyles = ScaledSheet.create({
+  bottomContainer: {
+    alignItems: 'flex-end',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  button: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: colors.primary,
+    borderRadius: 2,
+    borderWidth: 1,
+    elevation: 2,
+    justifyContent: 'center',
+    paddingHorizontal: '15@ms',
+    paddingVertical: '10@ms',
+  },
+  buttonMain: {
+    backgroundColor: colors.primary,
+    marginLeft: '5@ms',
+  },
+  buttonMainText: {
+    color: '#FFFFFF',
+  },
+  buttons: {
+    flexDirection: 'row',
+  },
+  buttonText: {
+    color: colors.primary,
+    fontSize: fonts.medium,
+    fontWeight: 'bold',
+  },
+  completedBorder: {
+    borderColor: colors.secondary,
+  },
+  completedText: {
+    color: colors.secondary,
+  },
+  container: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: colors.darkGrey,
+    borderRadius: 5,
+    borderWidth: 1,
+    elevation: 2,
+    height: '130@vs',
+    marginBottom: '15@vs',
+    padding: '15@ms',
+    width: '90%',
+  },
+  scrollview: {
+    alignItems: 'center',
+    flexGrow: 1,
+    paddingVertical: '25@vs',
+  },
+  stem: {
+    alignSelf: 'center',
+    color: colors.darkGrey,
+    fontSize: fonts.medium,
+    marginLeft: '15@ms',
+  },
+  stemContainer: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    height: '65@vs',
+  },
+  stemUpper: {
+    alignSelf: 'flex-start',
+    color: colors.primary,
+    fontSize: fonts.xl,
+    fontWeight: 'bold',
+  },
+  thoughts: {
+    color: colors.primary,
+    fontSize: fonts.small,
+    fontStyle: 'italic',
+  },
+});
 
 const styles = ScaledSheet.create({
   ampm: {
@@ -1092,9 +1266,6 @@ const styles = ScaledSheet.create({
     color: '#FFFFFF',
     fontSize: fonts.medium,
     fontWeight: 'bold',
-  },
-  scrollview: {
-    flexGrow: 1,
   },
   secondarySettings: {
     flex: 1,
