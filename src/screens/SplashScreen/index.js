@@ -19,8 +19,7 @@ export default class SplashScreen extends React.PureComponent {
     if (this.props.appReady !== nextProps.appReady) {
       const appSet = nextProps.appSet;
       setTimeout(() => {
-        // if (appSet) {
-        if (!appSet) {
+        if (appSet) {
           const resetAction = StackActions.reset({
             index: 0,
             actions: [
