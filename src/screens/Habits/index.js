@@ -11,9 +11,7 @@ import { colors, fonts, height } from '../../config/styles';
 import Header from '../../components/Header';
 import Swiper from 'react-native-swiper';
 import Aicon from 'react-native-vector-icons/FontAwesome';
-import Eicon from 'react-native-vector-icons/Entypo';
 import { verticalScale } from 'react-native-size-matters';
-import { NavigationActions, StackActions } from 'react-navigation';
 import Realm from 'realm';
 import Schema from '../../config/realm';
 
@@ -1042,10 +1040,11 @@ class Habit extends React.PureComponent {
 class StemCard extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.handleThink = this.handleThink.bind(this);
     this.state = {
       realmStem: {},
     }
+    this.handleThink = this.handleThink.bind(this);
+    this.updateRealmStem = this.updateRealmStem.bind(this);
   }
 
   render() {
@@ -1096,6 +1095,10 @@ class StemCard extends React.PureComponent {
   }
 
   componentDidMount() {
+    this.updateRealmStem();
+  }
+
+  updateRealmStem() {
     const { completed, stem } = this.props;
     if (completed) {
       Realm.open({schema: Schema, schemaVersion: 0})
@@ -1109,17 +1112,17 @@ class StemCard extends React.PureComponent {
   handleThink() {
     const { completed, habit, navigateToStem, stem } = this.props;
     const { realmStem } = this.state;
+    let params = {};
     if (completed) {
       if (realmStem['reflections'] && realmStem['reflections'].length === 0) {
-        const params = { reflection: true, ...realmStem };
-        navigateToStem(params);
+        params = { reflection: true, ...realmStem, updateRealmStem: this.updateRealmStem };
       } else {
-        navigateToStem(realmStem);
+        params = { ...realmStem, updateRealmStem: this.updateRealmStem };
       }
     } else {
-      const params = { habit, ...stem };
-      navigateToStem(params);
+      params = { habit, ...stem, updateRealmStem: this.updateRealmStem };
     }
+    navigateToStem(params);
   }
 }
 
