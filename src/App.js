@@ -34,7 +34,6 @@ const HabitsNavigator = createStackNavigator({
           reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
           thinkNotificationTime={props.screenProps.Settings.thinkNotificationTime}
           thinkNotificationDay={props.screenProps.Settings.thinkNotificationDay}
-          retrieveStemFromRealm={props.screenProps.retrieveStemFromRealm}
           updateHabitSettings={props.screenProps.updateHabitSettings}
         />
       )
@@ -45,6 +44,7 @@ const HabitsNavigator = createStackNavigator({
       return (
         <Stem
           navigation={props.navigation}
+          updateStemInRealm={props.screenProps.updateStemInRealm}
         />
       )
     }
@@ -145,9 +145,9 @@ export default class App extends React.Component {
       Courage: {},
       Freedom: {},
     }
-    this.retrieveStemFromRealm = this.retrieveStemFromRealm.bind(this);
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
+    this.updateStemInRealm = this.updateStemInRealm.bind(this);    
   }
 
   render() {
@@ -177,9 +177,9 @@ export default class App extends React.Component {
           Courage,
           Freedom,
 
-          retrieveStemFromRealm: this.retrieveStemFromRealm,
           toggleHabitProgress: this.toggleHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
+          updateStemInRealm: this.updateStemInRealm,
         }}
       />
     );
@@ -361,12 +361,24 @@ export default class App extends React.Component {
     });
   }
 
-  retrieveStemFromRealm(id) {
-    return Realm.open({schema: Schema, schemaVersion: 0})
+  updateStemInRealm(id, object, type) {
+    Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
-      const aux = realm.objectForPrimaryKey('Stem', id);
-      const ref = aux;
-      return ref;
+      const Stem = realm.objectForPrimaryKey('Stem', id);
+      console.log('Stem', Stem, id, object, type)
+      if (type === 'new') {
+        realm.write(() => {
+          realm.create('Stem', object);
+          const Habit = realm.objectForPrimaryKey('Habit', object['habit']);
+          Habit['completedStems'].unshift(id);
+        });
+      } else if (Stem['id']) {
+        realm.write(() => {
+          Stem['date'] = object['date'];
+          if (object['thoughts']) Stem['thoughts'] = object['thoughts'];
+          if (object['reflections']) Stem['reflections'] = object['reflections'];
+        });
+      }
     });
   }
 }
