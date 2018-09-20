@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Keyboard,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -9,7 +10,7 @@ import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Swiper from 'react-native-swiper';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+// import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
 
 export default class Stem extends React.PureComponent {
@@ -21,8 +22,8 @@ export default class Stem extends React.PureComponent {
     this.state = {
       dotFuncs: {},
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
-      reflections: [],
-      thoughts: [],
+      reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
+      thoughts: props.navigation.state.params && props.navigation.state.params.thoughts ? props.navigation.state.params.thoughts : [],
       value: '',
     }
     this.handleAdd = this.handleAdd.bind(this);
@@ -30,11 +31,13 @@ export default class Stem extends React.PureComponent {
     this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
     this._keyboardDidHide = this._keyboardDidHide.bind(this);
     this._keyboardDidShow = this._keyboardDidShow.bind(this);
+    this.updateStem = this.updateStem.bind(this);
   }
 
   render() {
     const {
       navigation,
+      // updateStemInRealm,
     } = this.props;
 
     const {
@@ -46,7 +49,7 @@ export default class Stem extends React.PureComponent {
     } = this.state;
 
     const { params } = this.props.navigation.state;
-    const realmStem = params['thoughts'] ? true : false;
+    console.log('params', params)
 
     return (
       <View style={styles.container}>
@@ -77,7 +80,7 @@ export default class Stem extends React.PureComponent {
           ref={(ref) => this.swiper = ref}
           showsPagination={false}
         >
-          <KeyboardAwareScrollView 
+          <ScrollView 
             contentContainerStyle={styles.scrollview}
             showsVerticalScrollIndicator={false}
           >
@@ -91,8 +94,8 @@ export default class Stem extends React.PureComponent {
                 ))
               }
             </View>
-          </KeyboardAwareScrollView>
-          <KeyboardAwareScrollView 
+          </ScrollView>
+          <ScrollView 
             contentContainerStyle={styles.scrollview}
             showsVerticalScrollIndicator={false}
           >
@@ -106,7 +109,7 @@ export default class Stem extends React.PureComponent {
               ))
             }
           </View>
-        </KeyboardAwareScrollView>
+        </ScrollView>
         </Swiper>
         <View style={styles.bottomView}>
           <AutoGrowingTextInput
@@ -131,7 +134,7 @@ export default class Stem extends React.PureComponent {
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={.8}
-            onPress={() => {}}
+            onPress={this.updateStem}
             style={[styles.button, styles.checkButton]}
           >
             <Aicon name={'check'} style={styles.buttonIcon} />
@@ -206,6 +209,61 @@ export default class Stem extends React.PureComponent {
 
   handleSwiperUpdate() {
     this.setState({ index: this.swiper.state.index });
+  }
+
+  updateStem() {
+    this.keyboardShowing && Keyboard.dismiss();
+    const { index, value } = this.state;
+    const { thoughts, reflections } = this.state;
+    let updatedThoughts = [];
+    let updatedReflections = [];
+    if ((!this.updatedThoughts || !this.updatedReflections) && !value) {
+      return;
+    } else if ((!this.updatedThoughts || !this.updatedReflections) && value) {
+      if (index === 0) {
+        updatedThoughts = [value, ...thoughts]
+        this.setState({ thoughts: updatedThoughts });
+        this.updatedThoughts = true;
+      } else if (index === 1) {
+        updatedReflections = [value, ...reflections]
+        this.setState({ reflections: updatedReflections });
+        this.updatedReflections = true;
+      }
+    } else if (value) {
+      if (index === 0) {
+        updatedThoughts = [value, ...thoughts]
+        this.setState({ thoughts: updatedThoughts });
+        this.updatedThoughts = true;
+      } else if (index === 1) {
+        updatedReflections = [value, ...reflections]
+        this.setState({ reflections: updatedReflections });
+        this.updatedReflections = true;
+      }
+    } else {
+      updatedThoughts = [...thoughts];
+      updatedReflections = [...reflections];
+    }
+    const { updateStemInRealm } = this.props;
+    const { params } = this.props.navigation.state;
+    const date = new Date().getTime();
+    if (params['date']) {
+      const updatedStem = {};
+      updatedStem['date'] = date;
+      if (this.updatedThoughts) updatedStem['thoughts'] = updatedThoughts;
+      if (this.updatedReflections) updatedStem['reflections'] = updatedReflections;
+      updateStemInRealm(params['id'], updatedStem, 'update');
+    } else {
+      const newStem = {
+        id: params['id'],
+        date,
+        habit: params['habit'],
+        stem: params['stem'],
+        thoughts: updatedThoughts,
+        reflections: updatedReflections,
+      };
+      updateStemInRealm(params['id'], newStem, 'new');
+    }
+    this.setState({ value: '' });
   }
 }
 
