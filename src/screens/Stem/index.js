@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   Keyboard,
   Platform,
   ScrollView,
@@ -17,6 +18,9 @@ import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
 export default class Stem extends React.PureComponent {
   constructor(props) {
     super(props);
+    this.opaqueLevel = .15;
+    this.reflectionMap = {};
+    this.thoughtMap = {};
     this.updatedThoughts;
     this.updatedReflections;
     this.state = {
@@ -25,8 +29,26 @@ export default class Stem extends React.PureComponent {
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
       thoughts: props.navigation.state.params && props.navigation.state.params.thoughts ? props.navigation.state.params.thoughts : [],
-      opaqueLevel: .15,
+      saving: false,
       value: '',
+    }
+    if (this.state.thoughts.length) {
+      this.state.thoughts.map((thought) => {
+        if (!this.thoughtMap[thought]) {
+          this.thoughtMap[thought] = 1;
+        } else {
+          this.thoughtMap[thought] += 1;
+        }
+      });
+    }
+    if (this.state.reflections.length) {
+      this.state.reflections.map((reflection) => {
+        if (!this.reflectionMap[reflection]) {
+          this.reflectionMap[reflection] = 1;
+        } else {
+          this.reflectionMap[reflection] += 1;
+        }
+      });
     }
     this.handleAdd = this.handleAdd.bind(this);
     this.handleInput = this.handleInput.bind(this);
@@ -49,7 +71,7 @@ export default class Stem extends React.PureComponent {
       index,
       reflections,
       thoughts,
-      opaqueLevel,
+      saving,
       value,
     } = this.state;
 
@@ -92,10 +114,10 @@ export default class Stem extends React.PureComponent {
               <Text style={styles.thoughtTitle}>Thoughts</Text>
               <Text style={styles.thoughtCount}>{ thoughts.length }</Text>
               {
-                thoughts.map((thought) => (
-                  <Text key={thought} style={styles.thought}>•  { thought }</Text>
-
-                ))
+                thoughts.map((thought, idx) => {
+                  const key = this.thoughtMap[thought] > 1 ? idx : thought; 
+                  return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
+                })
               }
             </View>
           </ScrollView>
@@ -107,10 +129,10 @@ export default class Stem extends React.PureComponent {
             <Text style={styles.thoughtTitle}>Reflections</Text>
             <Text style={styles.thoughtCount}>{ reflections.length }</Text>
             {
-              reflections.map((reflection) => (
-                <Text key={reflection} style={styles.thought}>•  { reflection }</Text>
-
-              ))
+              reflections.map((reflection, idx) => {
+                const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
+                return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
+              })
             }
           </View>
         </ScrollView>
@@ -141,8 +163,13 @@ export default class Stem extends React.PureComponent {
             onPress={this.updateStem}
             style={styles.checkContainer}
           >
-            <View style={[styles.button, styles.checkButton, { opacity: index === 1 && keyboardShowing ? 1 : opaqueLevel }]}>
-              <Aicon name={'check'} style={styles.buttonIcon} />
+            <View style={[styles.button, styles.checkButton, { opacity: index === 1 && keyboardShowing ? 1 : this.opaqueLevel }]}>
+              {
+                saving ?
+                <ActivityIndicator size={'small'} color={'#FFFFFF'} />
+                :
+                <Aicon name={'check'} style={styles.buttonIcon} />
+              }
             </View>
           </TouchableOpacity>
         </View>
@@ -163,9 +190,11 @@ export default class Stem extends React.PureComponent {
       1: () => this.handleDot(1),
     }
     this.setState({ dotFuncs });
+    this.mounted = true;
   }
 
   componentWillUnmount() {
+    this.mounted = false;
     if (Platform.OS === 'ios') {
       this.keyboardWillShowListener.remove();
     } else {
@@ -192,16 +221,29 @@ export default class Stem extends React.PureComponent {
   handleAdd() {
     if (this.preventAdd) return;
     this.preventAdd = true;
-    setTimeout(() => this.preventAdd = false, 250);
-    const { index, opaqueLevel, value } = this.state;
+    setTimeout(() => this.preventAdd = false, 500);
+    const { index, value } = this.state;
     if (value) {
       if (index === 0) {
+        if (this.thoughtMap[value]) {
+          this.thoughtMap[value] += 1;
+        } else {
+          this.thoughtMap[value] = 1;
+        }
         const { thoughts } = this.state;
-        this.setState({ thoughts: [value, ...thoughts], value: '', opaqueLevel: opaqueLevel + .15 });
+        const res = [value, ...thoughts];
+        this.opaqueLevel += .15;
+        this.setState({ thoughts: res, value: '' });
         this.updatedThoughts = true;
       } else {
+        if (this.reflectionMap[value]) {
+          this.reflectionMap[value] += 1;
+        } else {
+          this.reflectionMap[value] = 1;
+        }
         const { reflections } = this.state;
-        this.setState({ reflections: [value, ...reflections], value: '' });
+        const res = [value, ...reflections];
+        this.setState({ reflections: res, value: '' });
         this.updatedReflections = true;
       }
     } else {
@@ -271,6 +313,11 @@ export default class Stem extends React.PureComponent {
       updatedThoughts = [...thoughts];
       updatedReflections = [...reflections];
     }
+    this.setState({ saving: true });
+    setTimeout(() => {
+      this.opaqueLevel = .15;
+      this.mounted && this.setState({ saving: false });
+    }, 1500);
     const { updateStemInRealm } = this.props;
     const { params } = this.props.navigation.state;
     const date = new Date().getTime();
@@ -293,8 +340,12 @@ export default class Stem extends React.PureComponent {
     }
     this.updatedReflections = false;
     this.updatedThoughts = false;
-    this.setState({ value: '', opaqueLevel: .15 });
-    this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
+    this.setState({ value: '' });
+    setTimeout(() => {
+      if (this.mounted) {
+        this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
+      }
+    }, 1000);
   }
 }
 
