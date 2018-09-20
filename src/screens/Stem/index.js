@@ -141,7 +141,7 @@ export default class Stem extends React.PureComponent {
             onPress={this.updateStem}
             style={styles.checkContainer}
           >
-            <View style={[styles.button, styles.checkButton, { opacity: opaqueLevel }]}>
+            <View style={[styles.button, styles.checkButton, { opacity: index === 1 && keyboardShowing ? 1 : opaqueLevel }]}>
               <Aicon name={'check'} style={styles.buttonIcon} />
             </View>
           </TouchableOpacity>
@@ -201,7 +201,7 @@ export default class Stem extends React.PureComponent {
         this.updatedThoughts = true;
       } else {
         const { reflections } = this.state;
-        this.setState({ reflections: [value, ...reflections], value: '', opaqueLevel: opaqueLevel + .15 });
+        this.setState({ reflections: [value, ...reflections], value: '' });
         this.updatedReflections = true;
       }
     } else {
