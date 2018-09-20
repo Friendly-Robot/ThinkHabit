@@ -5,7 +5,6 @@ import {
   View,
 } from 'react-native';
 import { colors, fonts } from '../../config/styles';
-import Aicon from 'react-native-vector-icons/FontAwesome';
 import Eicon from 'react-native-vector-icons/Entypo';
 
 export default class Header extends React.PureComponent {
@@ -29,7 +28,7 @@ export default class Header extends React.PureComponent {
             onPress={this.handleBack}
             style={styles.caret}
           >
-            <Aicon name={'caret-left'} style={styles.caretIcon} /> 
+            <Eicon name={'chevron-left'} style={styles.caretIcon} /> 
           </TouchableOpacity>
         }
         <Text style={[styles.title, backArrow && styles.backTitle]}>Think Habit</Text>
