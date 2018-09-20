@@ -1066,9 +1066,14 @@ class StemCard extends React.PureComponent {
           <Text style={stemStyles.stem}>{ stem.stem.substr(stem.stem.indexOf(' ')) }</Text>
         </View>
         <View style={stemStyles.bottomContainer}>
-          <Text style={stemStyles.thoughts}>
-            { realmStem['thoughts'] ? `${realmStem['thoughts'].length} thoughts` : null }
-          </Text>
+          <View>
+            <Text style={stemStyles.thoughts}>
+              { realmStem['thoughts'] ? `${realmStem['thoughts'].length} ${realmStem['thoughts'].length > 1 ? 'thoughts' : 'thought'}` : null }
+            </Text>
+            <Text style={stemStyles.thoughts}>
+              { realmStem['reflections'] ? `${realmStem['reflections'].length} ${realmStem['reflections'].length > 1 ? 'reflections' : 'reflection'}` : null }
+            </Text>
+          </View>
           <View style={stemStyles.buttons}>
             <TouchableOpacity
               activeOpacity={.8}
