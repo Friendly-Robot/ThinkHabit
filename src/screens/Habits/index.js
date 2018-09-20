@@ -11,8 +11,11 @@ import { colors, fonts, height } from '../../config/styles';
 import Header from '../../components/Header';
 import Swiper from 'react-native-swiper';
 import Aicon from 'react-native-vector-icons/FontAwesome';
+import Eicon from 'react-native-vector-icons/Entypo';
 import { verticalScale } from 'react-native-size-matters';
 import { NavigationActions, StackActions } from 'react-navigation';
+import Realm from 'realm';
+import Schema from '../../config/realm';
 
 
 export default class Habits extends React.PureComponent {
@@ -65,7 +68,6 @@ export default class Habits extends React.PureComponent {
       // reflectNotificationDay, 
       // thinkNotificationTime, 
       // thinkNotificationDay,
-      retrieveStemFromRealm,
       // updateHabitSettings,
     } = this.props;
 
@@ -101,9 +103,9 @@ export default class Habits extends React.PureComponent {
             >
               {
                 displaySettings ?
-                <Aicon name={'caret-up'} style={styles.caret} />
+                <Aicon name={'chevron-up'} style={styles.caret} />
                 :
-                <Aicon name={'caret-down'} style={styles.caret} />
+                <Aicon name={'chevron-down'} style={styles.caret} />
               }
             </TouchableOpacity>
             <Text style={styles.habit}>{ habitSeq[index] }</Text>
@@ -674,9 +676,9 @@ export default class Habits extends React.PureComponent {
               <Habit
                 completedStems={this.props[habit]['completedStems']}
                 data={data[habit]}
+                habit={habit}
                 key={habit}
                 navigateToStem={this.navigateToStem}
-                retrieveStemFromRealm={retrieveStemFromRealm}
               />
             ))
           }
@@ -1000,7 +1002,6 @@ class Habit extends React.PureComponent {
     const {
       // completedStems,
       data,
-      // retrieveStemFromRealm,
     } = this.props;
 
     return (
@@ -1021,12 +1022,12 @@ class Habit extends React.PureComponent {
   }
 
   _renderItem({item}) {
-    const { completedStems, navigateToStem, retrieveStemFromRealm } = this.props;
+    const { completedStems, habit, navigateToStem } = this.props;
     return (
       <StemCard
         completed={completedStems.indexOf(item.id) >= 0 ? true : false}
+        habit={habit}
         navigateToStem={navigateToStem}
-        retrieveStemFromRealm={retrieveStemFromRealm}
         stem={item}
       />
     )
@@ -1041,17 +1042,22 @@ class Habit extends React.PureComponent {
 class StemCard extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.realmStem = props.completed && props.retrieveStemFromRealm(props.stem.id);
     this.handleThink = this.handleThink.bind(this);
+    this.state = {
+      realmStem: {},
+    }
   }
 
   render() {
     const {
       completed,
+      // habit,
       // navigateToStem,
-      // retrieveStemFromRealm,
       stem,
     } = this.props;
+
+    const { realmStem } = this.state;
+    const reflect = completed && (realmStem['reflections'] && realmStem['reflections'].length === 0);
 
     return (
       <View style={stemStyles.container}>
@@ -1061,7 +1067,7 @@ class StemCard extends React.PureComponent {
         </View>
         <View style={stemStyles.bottomContainer}>
           <Text style={stemStyles.thoughts}>
-            { this.realmStem && this.realmStem['thoughts'].length ? `${this.realmStem['thoughts'].length} thoughts` : null }
+            { realmStem['thoughts'] ? `${realmStem['thoughts'].length} thoughts` : null }
           </Text>
           <View style={stemStyles.buttons}>
             <TouchableOpacity
@@ -1074,9 +1080,9 @@ class StemCard extends React.PureComponent {
             <TouchableOpacity
               activeOpacity={.8}
               onPress={this.handleThink}
-              style={[stemStyles.button, stemStyles.buttonMain, completed && stemStyles.completedBorder]}
+              style={[stemStyles.button, stemStyles.buttonMain, reflect && stemStyles.completedButton]}
             >
-              <Text style={[stemStyles.buttonText, stemStyles.buttonMainText, completed && stemStyles.completedText]}>{ completed ? `Reflect` : `Think` }</Text>
+              <Text style={[stemStyles.buttonText, stemStyles.buttonMainText]}>{ reflect ? `Reflect` : `Think` }</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1084,12 +1090,30 @@ class StemCard extends React.PureComponent {
     )
   }
 
-  handleThink() {
-    const { completed, navigateToStem, stem } = this.props;
+  componentDidMount() {
+    const { completed, stem } = this.props;
     if (completed) {
-      navigateToStem(this.realmStem);
+      Realm.open({schema: Schema, schemaVersion: 0})
+      .then(realm => {
+        const Stem = realm.objectForPrimaryKey('Stem', stem['id']);
+        this.setState({ realmStem: Stem });
+      });
+    }
+  }
+  
+  handleThink() {
+    const { completed, habit, navigateToStem, stem } = this.props;
+    const { realmStem } = this.state;
+    if (completed) {
+      if (realmStem['reflections'] && realmStem['reflections'].length === 0) {
+        const params = { reflection: true, ...realmStem };
+        navigateToStem(params);
+      } else {
+        navigateToStem(realmStem);
+      }
     } else {
-      navigateToStem(stem);
+      const params = { habit, ...stem };
+      navigateToStem(params);
     }
   }
 }
@@ -1129,11 +1153,9 @@ const stemStyles = ScaledSheet.create({
     fontSize: fonts.medium,
     fontWeight: 'bold',
   },
-  completedBorder: {
+  completedButton: {
+    backgroundColor: colors.secondary,
     borderColor: colors.secondary,
-  },
-  completedText: {
-    color: colors.secondary,
   },
   container: {
     alignItems: 'center',
