@@ -1067,17 +1067,17 @@ class StemCard extends React.PureComponent {
         <View style={stemStyles.bottomContainer}>
           <View>
             <Text style={stemStyles.thoughts}>
-              { realmStem['thoughts'] ? `${realmStem['thoughts'].length} ${realmStem['thoughts'].length > 1 ? 'thoughts' : 'thought'}` : null }
+              { realmStem['thoughts'] ? `${realmStem['thoughts'].length} ${realmStem['thoughts'].length === 1 ? 'thought' : 'thoughts'}` : null }
             </Text>
             <Text style={stemStyles.thoughts}>
-              { realmStem['reflections'] ? `${realmStem['reflections'].length} ${realmStem['reflections'].length > 1 ? 'reflections' : 'reflection'}` : null }
+              { realmStem['reflections'] ? `${realmStem['reflections'].length} ${realmStem['reflections'].length === 1 ? 'reflection' : 'reflections'}` : null }
             </Text>
           </View>
           <View style={stemStyles.buttons}>
             <TouchableOpacity
               activeOpacity={.8}
               onPress={() => {}}
-              style={stemStyles.button}
+              style={[stemStyles.button, stemStyles.buttonBorder]}
             >
               <Text style={stemStyles.buttonText}>Queue</Text>
             </TouchableOpacity>
@@ -1138,13 +1138,15 @@ const stemStyles = ScaledSheet.create({
   button: {
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderColor: colors.primary,
     borderRadius: 2,
-    borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
     paddingHorizontal: '15@ms',
     paddingVertical: '10@ms',
+  },
+  buttonBorder: {
+    borderColor: colors.primary,
+    borderWidth: 1,
   },
   buttonMain: {
     backgroundColor: colors.primary,
@@ -1163,7 +1165,7 @@ const stemStyles = ScaledSheet.create({
   },
   completedButton: {
     backgroundColor: colors.secondary,
-    borderColor: colors.secondary,
+    paddingHorizontal: '9@ms',
   },
   container: {
     alignItems: 'center',
