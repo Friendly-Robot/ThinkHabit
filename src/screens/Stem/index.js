@@ -286,6 +286,7 @@ export default class Stem extends React.PureComponent {
       updateStemInRealm(params['id'], newStem, 'new');
     }
     this.setState({ value: '' });
+    this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
   }
 }
 
