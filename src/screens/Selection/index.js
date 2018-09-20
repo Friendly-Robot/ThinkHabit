@@ -212,7 +212,7 @@ const styles = ScaledSheet.create({
     borderColor: '#FFFFFF',
     borderRadius: 1000,
     borderWidth: 2,
-    padding: '35@ms',
+    padding: '30@ms',
   },
   row: {
     flex: 1,
