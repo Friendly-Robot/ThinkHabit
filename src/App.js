@@ -161,7 +161,7 @@ export default class App extends React.Component {
     
       // (required) Called when a remote or local notification is opened or received
       onNotification: (notification) => {
-        console.log( 'NOTIFICATION:', notification );
+        console.log( 'ON NOTIFICATION:', notification );
         // ** How do we handle not sending the same unopened stem??
         this.setNextPushNotification();
         
@@ -419,6 +419,8 @@ export default class App extends React.Component {
         queueRef = this.addNewStemsToQueue(numberOfStemsPerDay, currHabit, this.state[currHabit]['completedStems']);
         if (queueRef.length === 0) {
           // TODO How to handle when user is finished with this think habit?
+          // TODO Notify the user that they've finished this think habit
+          queueRef = this.resetNewStemsToQueue(numberOfStemsPerDay, currHabit);
         }
       }
       const queuedNotification = JSON.parse(queueRef.shift());
@@ -480,10 +482,46 @@ export default class App extends React.Component {
       // number: '10', // (optional) Valid 32 bit integer specified as string. default: none (Cannot be zero)
       repeatType: 'time', // (optional) Repeating interval. Check 'Repeating Notifications' section for more info.
       repeatTime: 86400000,
-      actions: '["Later", "Think"]',  // (Android only) See the doc for notification actions to know more
+      // actions: '["Later", "Think"]',  // (Android only) See the doc for notification actions to know more
 
       date: new Date(Date.now() + (60 * 1000)) // in 60 secs
     });
+  }
+
+  resetNewStemsToQueue(numberOfStemsPerDay, currHabit) {
+    const queue = [];
+    const addedToQueue = {};
+    const length = Data[currHabit].length;
+    for (let i = 0; i < numberOfStemsPerDay; i += 1) {
+      let randomThought = Math.floor(Math.random() * length);
+      let id = Data[currHabit][randomThought]['id'];
+      if (!addedToQueue[id]) {
+        addedToQueue[id] = true;
+        const stem = JSON.stringify({
+          notified: 0,
+          id,
+          stem: Data[currHabit][randomThought]['stem'],
+          habit: currHabit,
+        });
+        queue.push(stem);
+      } else {
+        while (addedToQueue[id]) {
+          randomThought = Math.floor(Math.random() * length);
+          id = Data[currHabit][randomThought]['id'];
+          if (!addedToQueue[id]) {
+            const stem = JSON.stringify({
+              notified: 0,
+              id,
+              stem: Data[currHabit][randomThought]['stem'],
+              habit: currHabit,
+            });
+            queue.push(stem);
+          }
+        }
+        addedToQueue[id] = true;
+      }
+    }
+    return queue;
   }
 
   addNewStemsToQueue(numberOfStemsPerDay, currHabit, completedStems) {
