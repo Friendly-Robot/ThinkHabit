@@ -127,28 +127,27 @@ export default class Habits extends React.PureComponent {
               </TouchableOpacity>
             }
           </View>
-          <View style={styles.progress}>
-            <TouchableOpacity
-              activeOpacity={.8}
-              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-              onPress={this.toggleProgress} 
-              style={styles.checkbox}
-            >
-              { inProgress && <Aicon name={'check'} style={styles.x} />}
-            </TouchableOpacity>
-            <Text style={styles.progressText}>
-              {
-                inProgress ?
-                `currently in progress`
-                :
-                `disabled`
-              }
-            </Text>
-          </View>
-
           {
             displaySettings &&
             <View style={styles.secondarySettings}>
+              <View style={styles.progress}>
+                <TouchableOpacity
+                  activeOpacity={.8}
+                  hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                  onPress={this.toggleProgress} 
+                  style={styles.checkbox}
+                >
+                  { inProgress && <Aicon name={'check'} style={styles.x} />}
+                </TouchableOpacity>
+                <Text style={styles.progressText}>
+                  {
+                    inProgress ?
+                    `currently in progress`
+                    :
+                    `disabled`
+                  }
+                </Text>
+              </View>
               <View style={styles.incContainer}>
                 <Text style={styles.incTitle}>Number of stems per day</Text>
                 <View style={styles.incButtons}>
