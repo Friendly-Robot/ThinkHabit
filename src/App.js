@@ -1,4 +1,5 @@
 import React from 'react';
+import { PushNotificationIOS } from 'react-native';
 import { createDrawerNavigator, createStackNavigator } from 'react-navigation';
 import Realm from 'realm';
 import Schema from './config/realm';
@@ -8,6 +9,8 @@ import Habits from './screens/Habits';
 import Stem from './screens/Stem';
 import Settings from './screens/Settings';
 import About from './screens/About';
+import PushNotification from 'react-native-push-notification'
+import Data from './config/data';
 
 if (!__DEV__) {
   console.log = () => {};
@@ -137,6 +140,7 @@ export default class App extends React.Component {
     this.state = {
       appReady: false,
       appSet: false,
+      navigation: null,
       Settings: {},
       Confidence: {},
       Meditation: {},
@@ -144,10 +148,49 @@ export default class App extends React.Component {
       Responsibility: {},
       Courage: {},
       Freedom: {},
-    }
+    } 
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
-    this.updateStemInRealm = this.updateStemInRealm.bind(this);    
+    this.updateStemInRealm = this.updateStemInRealm.bind(this);
+    PushNotification.configure({
+
+      // (optional) Called when Token is generated (iOS and Android)
+      onRegister: function(token) {
+        console.log( 'TOKEN:', token );
+      },
+    
+      // (required) Called when a remote or local notification is opened or received
+      onNotification: (notification) => {
+        console.log( 'NOTIFICATION:', notification );
+        // ** How do we handle not sending the same unopened stem??
+        this.setNextPushNotification();
+        
+        // process the notification
+        // required on iOS only (see fetchCompletionHandler docs: https://facebook.github.io/react-native/docs/pushnotificationios.html)
+        notification.finish(PushNotificationIOS.FetchResult.NoData);
+      },
+    
+      // ANDROID ONLY: GCM or FCM Sender ID (product_number) (optional - not required for local notifications, but is need to receive remote push notifications)
+      // senderID: "YOUR GCM (OR FCM) SENDER ID",
+    
+      // IOS ONLY (optional): default: all - Permissions to register.
+      permissions: {
+        alert: true,
+        badge: true,
+        sound: true
+      },
+    
+      // Should the initial notification be popped automatically
+      // default: true
+      popInitialNotification: true,
+    
+      /**
+        * (optional) default: true
+        * - Specified if permissions (ios) and token (android and ios) will requested or not,
+        * - if not, you must call PushNotificationsHandler.requestPermissions() later
+        */
+      requestPermissions: true,
+    });
   }
 
   render() {
@@ -187,6 +230,7 @@ export default class App extends React.Component {
 
   componentDidMount() {
     this.initializeApp();
+    setTimeout(() => this.setNextPushNotification(), 1000);
   }
 
   initializeApp() {
@@ -290,6 +334,7 @@ export default class App extends React.Component {
           name: '', 
           numberOfStemsPerDay: 1, 
           picture: '',
+          queue: [],
           repeat: 3, 
           reflectNotificationTime, 
           reflectNotificationDay, 
@@ -310,6 +355,7 @@ export default class App extends React.Component {
         name: '',
         numberOfStemsPerDay: 1,
         picture: '',
+        queue: [],
         repeat: 3, 
         reflectNotificationTime, 
         reflectNotificationDay,
@@ -323,6 +369,143 @@ export default class App extends React.Component {
       Courage: { completedStemCount: 0, completedStems: [], name: 'Courage' },
       Freedom: { completedStemCount: 0, completedStems: [], name: 'Freedom' },
     });
+  }
+
+  // registerNotificationActions() {
+  //   if (Platform.OS === 'android') {
+  //     PushNotification.registerNotificationActions(['Later', 'Think', 'Reflect']);
+  //     DeviceEventEmitter.addListener('notificationActionReceived', (action) => {
+  //       console.log ('Notification action received: ' + action);
+  //       const info = JSON.parse(action.dataJSON);
+  //       if (info.action == 'Later') {
+
+  //       } else if (info.action === 'Think') {
+  //         this.handleNotificationRoute(info.tag);
+  //       } else if (info.action === 'Reflect') {
+  
+  //       }
+  //       // Add all the required actions handlers
+  //     });
+  //   }
+  // }
+
+  // handleNotificationRoute(params) {
+  //   console.log('navigation', this.state.navigation)
+  //   const navigateAction = NavigationActions.navigate({
+  //     routeName: 'Stem',
+  //     params,
+  //   });
+  //   this.state.navigation.dispatch(navigateAction);
+  // }
+
+  setNextPushNotification(queuedStem) {
+    PushNotification.cancelAllLocalNotifications();
+    const { Settings } = this.state;
+    const { currHabit, numberOfStemsPerDay, queue, reflectNotificationTime, repeat } = Settings;
+    if (!currHabit && !queuedStem) return;
+    let notification = {};
+    let queueRef = [...queue];
+    if (!queuedStem) {
+      // Example Queue object:
+      // {
+      //   notified: 'int',
+      //   id: 'string',
+      //   stem: 'string',
+      //   habit: 'string',
+      //   reflect: 'bool',
+      // }
+      if (queueRef.length === 0) {
+        // Populate queueRef with notifications
+        queueRef = this.addNewStemsToQueue(numberOfStemsPerDay, currHabit, this.state[currHabit]['completedStems']);
+        if (queueRef.length === 0) {
+          // TODO How to handle when user is finished with this think habit?
+        }
+      }
+      const queuedNotification = JSON.parse(queueRef.shift());
+      const multiply = reflectNotificationTime.length ? 2 : 1;
+      if (queuedNotification.notified + 1 !== repeat * multiply) { // * multiply to factor in reflections
+        queuedNotification.notified += 1;
+        queueRef.unshift(JSON.stringify(queuedNotification));
+        // ** Pay attention to whether a reflection is coming up for the most recent think habit
+      }
+
+      notification = queuedNotification;
+    } else {
+      PushNotification.cancelAllLocalNotifications();
+      notification = {
+        notified: 1,
+        id: queuedStem['id'],
+        stem: queuedStem['stem'],
+        habit: queuedStem['habit'],
+      }
+      queueRef.unshift(JSON.stringify(notification));
+    }
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      realm.write(() => {
+        Settings['queue'] = queueRef;
+      });
+    });
+    console.log('Notification QUEUE:', notification);
+    console.log('Notification:', notification);
+    PushNotification.localNotificationSchedule({
+      /* Android Only Properties */
+      // id: '0', // (optional) Valid unique 32 bit integer specified as string. default: Autogenerated Unique ID
+      ticker: "My Notification Ticker", // (optional)
+      autoCancel: true, // (optional) default: true
+      largeIcon: "ic_launcher", // (optional) default: "ic_launcher"
+      smallIcon: "ic_notification", // (optional) default: "ic_notification" with fallback for "ic_launcher"
+      // bigText: "My big text that will be shown when notification is expanded", // (optional) default: "message" prop
+      // subText: "This is a subText", // (optional) default: none
+      // color: "red", // (optional) default: system default
+      vibrate: true, // (optional) default: true
+      vibration: 300, // vibration length in milliseconds, ignored if vibrate=false, default: 1000
+      tag: notification, // (optional) add tag to message
+      // group: "group", // (optional) add group to message
+      // ongoing: false, // (optional) set whether this is an "ongoing" notification
+      priority: "high", // (optional) set notification priority, default: high
+      visibility: "private", // (optional) set notification visibility, default: private
+      importance: "high", // (optional) set notification importance, default: high
+
+      /* iOS only properties */
+      // alertAction: // (optional) default: view
+      // category: // (optional) default: null
+      // userInfo: // (optional) default: null (object containing additional notification data)
+
+      /* iOS and Android properties */
+      // title: notification.stem, // (optional)
+      message: notification.stem, // (required)
+      playSound: true, // (optional) default: true
+      soundName: 'default', // (optional) Sound to play when the notification is shown. Value of 'default' plays the default sound. It can be set to a custom sound such as 'android.resource://com.xyz/raw/my_sound'. It will look for the 'my_sound' audio file in 'res/raw' directory and play it. default: 'default' (default sound is played)
+      // number: '10', // (optional) Valid 32 bit integer specified as string. default: none (Cannot be zero)
+      repeatType: 'time', // (optional) Repeating interval. Check 'Repeating Notifications' section for more info.
+      repeatTime: 86400000,
+      actions: '["Later", "Think"]',  // (Android only) See the doc for notification actions to know more
+
+      date: new Date(Date.now() + (60 * 1000)) // in 60 secs
+    });
+  }
+
+  addNewStemsToQueue(numberOfStemsPerDay, currHabit, completedStems) {
+    const queue = [];
+    const addedToQueue = {};
+    for (let i = 0; i < numberOfStemsPerDay; i += 1) {
+      for (let j = 0; j < Data[currHabit].length; j += 1) {
+        const id = Data[currHabit][j]['id'];
+        if (!addedToQueue[id] && completedStems.indexOf(id) === -1) {
+          const stem = JSON.stringify({
+            notified: 0,
+            id,
+            stem: Data[currHabit][j]['stem'],
+            habit: currHabit,
+          });
+          queue.push(stem);
+          addedToQueue[id] = true;
+          break;
+        }
+      }
+    }
+    return queue;
   }
 
   toggleHabitProgress(habit) {
@@ -339,6 +522,10 @@ export default class App extends React.Component {
         this.setState({...updatedState})
         Settings['currHabit'] = habit;
         Settings['habitSeq'] = habitSeq;
+        if (!habit) {
+          Settings['queue'] = [];
+          PushNotification.cancelAllLocalNotifications();
+        }
       });
     });
   }
