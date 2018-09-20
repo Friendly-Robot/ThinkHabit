@@ -3,6 +3,7 @@ import Realm from 'realm';
 class Habit extends Realm.Object {};
 Habit.schema = {
   name: 'Habit',
+  primaryKey: 'name',
   properties: {
     completedStemCount: 'int',
     completedStems: 'string[]',
