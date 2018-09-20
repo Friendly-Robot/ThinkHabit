@@ -365,7 +365,6 @@ export default class App extends React.Component {
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       const Stem = realm.objectForPrimaryKey('Stem', id);
-      console.log('Stem', Stem, id, object, type)
       if (type === 'new') {
         realm.write(() => {
           realm.create('Stem', object);

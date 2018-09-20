@@ -38,6 +38,7 @@ Settings.schema = {
     name: 'string?',
     numberOfStemsPerDay: 'int',
     picture: 'string?',
+    queue: 'string[]',
     repeat: 'int',
     reflectNotificationTime: 'int[]',
     reflectNotificationDay: 'int[]',

@@ -49,7 +49,6 @@ export default class Stem extends React.PureComponent {
     } = this.state;
 
     const { params } = this.props.navigation.state;
-    console.log('params', params)
 
     return (
       <View style={styles.container}>
