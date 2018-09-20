@@ -7,25 +7,25 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, fonts, height } from '../../config/styles';
+import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Swiper from 'react-native-swiper';
 import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
-import { verticalScale } from 'react-native-size-matters';
+
 
 export default class Stem extends React.PureComponent {
   constructor(props) {
     super(props);
     this.updatedThoughts;
     this.updatedReflections;
-    this.keyboardOffset = height - verticalScale(130);
     this.state = {
       dotFuncs: {},
       keyboardShowing: false,
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
       thoughts: props.navigation.state.params && props.navigation.state.params.thoughts ? props.navigation.state.params.thoughts : [],
+      opaqueLevel: .15,
       value: '',
     }
     this.handleAdd = this.handleAdd.bind(this);
@@ -49,6 +49,7 @@ export default class Stem extends React.PureComponent {
       index,
       reflections,
       thoughts,
+      opaqueLevel,
       value,
     } = this.state;
 
@@ -138,9 +139,11 @@ export default class Stem extends React.PureComponent {
           <TouchableOpacity
             activeOpacity={.8}
             onPress={this.updateStem}
-            style={[styles.button, styles.checkButton]}
+            style={styles.checkContainer}
           >
-            <Aicon name={'check'} style={styles.buttonIcon} />
+            <View style={[styles.button, styles.checkButton, { opacity: opaqueLevel }]}>
+              <Aicon name={'check'} style={styles.buttonIcon} />
+            </View>
           </TouchableOpacity>
         </View>
         { Platform.OS === 'ios' && keyboardShowing && <View style={{ height: this.keyboardHeight }} /> }
@@ -187,15 +190,18 @@ export default class Stem extends React.PureComponent {
   }
 
   handleAdd() {
-    const { index, value } = this.state;
+    if (this.preventAdd) return;
+    this.preventAdd = true;
+    setTimeout(() => this.preventAdd = false, 250);
+    const { index, opaqueLevel, value } = this.state;
     if (value) {
       if (index === 0) {
         const { thoughts } = this.state;
-        this.setState({ thoughts: [value, ...thoughts], value: '' });
+        this.setState({ thoughts: [value, ...thoughts], value: '', opaqueLevel: opaqueLevel + .15 });
         this.updatedThoughts = true;
       } else {
         const { reflections } = this.state;
-        this.setState({ reflections: [value, ...reflections], value: '' });
+        this.setState({ reflections: [value, ...reflections], value: '', opaqueLevel: opaqueLevel + .15 });
         this.updatedReflections = true;
       }
     } else {
@@ -239,7 +245,7 @@ export default class Stem extends React.PureComponent {
     const { thoughts, reflections } = this.state;
     let updatedThoughts = [];
     let updatedReflections = [];
-    if ((!this.updatedThoughts || !this.updatedReflections) && !value) {
+    if ((!this.updatedThoughts && !this.updatedReflections) && !value) {
       return;
     } else if ((!this.updatedThoughts || !this.updatedReflections) && value) {
       if (index === 0) {
@@ -285,7 +291,9 @@ export default class Stem extends React.PureComponent {
       };
       updateStemInRealm(params['id'], newStem, 'new');
     }
-    this.setState({ value: '' });
+    this.updatedReflections = false;
+    this.updatedThoughts = false;
+    this.setState({ value: '', opaqueLevel: .15 });
     this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
   }
 }
@@ -327,9 +335,20 @@ const styles = ScaledSheet.create({
     fontSize: fonts.medium,
   },
   checkButton: {
+    alignItems: 'center',
     backgroundColor: colors.secondary,
-    bottom: '15@vs',
+    borderRadius: 100,
+    elevation: 4,
+    height: '45@ms',
+    justifyContent: 'center',
+    width: '45@ms',
+  },
+  checkContainer: {
+    bottom: '11@vs',
+    height: '49@ms',
+    position: 'absolute',
     right: '15@ms',
+    width: '45@ms',
   },
   container: {
     backgroundColor: '#FFFFFF',
@@ -349,6 +368,12 @@ const styles = ScaledSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginVertical: '10@vs',
+  },
+  inactiveButton: {
+    backgroundColor: colors.lightGrey,
+    bottom: '15@vs',
+    elevation: 0,
+    right: '15@ms',
   },
   input: {
     alignSelf: 'center',
