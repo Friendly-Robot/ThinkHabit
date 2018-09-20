@@ -1,26 +1,28 @@
 import React from 'react';
 import {
   Keyboard,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, fonts } from '../../config/styles';
+import { colors, fonts, height } from '../../config/styles';
 import Header from '../../components/Header';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Swiper from 'react-native-swiper';
-// import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
+import { verticalScale } from 'react-native-size-matters';
 
 export default class Stem extends React.PureComponent {
   constructor(props) {
     super(props);
     this.updatedThoughts;
     this.updatedReflections;
-    this.keyboardShowing;
+    this.keyboardOffset = height - verticalScale(130);
     this.state = {
       dotFuncs: {},
+      keyboardShowing: false,
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
       thoughts: props.navigation.state.params && props.navigation.state.params.thoughts ? props.navigation.state.params.thoughts : [],
@@ -30,6 +32,7 @@ export default class Stem extends React.PureComponent {
     this.handleInput = this.handleInput.bind(this);
     this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
     this._keyboardDidHide = this._keyboardDidHide.bind(this);
+    this._keyboardWillShow = this._keyboardWillShow.bind(this);
     this._keyboardDidShow = this._keyboardDidShow.bind(this);
     this.updateStem = this.updateStem.bind(this);
   }
@@ -42,6 +45,7 @@ export default class Stem extends React.PureComponent {
 
     const {
       dotFuncs,
+      keyboardShowing,
       index,
       reflections,
       thoughts,
@@ -120,7 +124,7 @@ export default class Stem extends React.PureComponent {
             returnKeyType='done'
             scrollEnabled={true}
             selectionColor={'#FF9900'}
-            style={styles.input}
+            style={[styles.input, Platform.OS === 'ios' && styles.iosInput]}
             underlineColorAndroid={colors.primary}
             value={value}
           />
@@ -139,12 +143,17 @@ export default class Stem extends React.PureComponent {
             <Aicon name={'check'} style={styles.buttonIcon} />
           </TouchableOpacity>
         </View>
+        { Platform.OS === 'ios' && keyboardShowing && <View style={{ height: this.keyboardHeight }} /> }
       </View>
     )
   }
 
   componentDidMount() {
-    this.keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', this._keyboardDidShow);
+    if (Platform.OS === 'ios') {
+      this.keyboardWillShowListener = Keyboard.addListener('keyboardWillShow', this._keyboardWillShow);
+    } else {
+      this.keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', this._keyboardDidShow);
+    }
     this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
     const dotFuncs = {
       0: () => this.handleDot(0),
@@ -154,16 +163,27 @@ export default class Stem extends React.PureComponent {
   }
 
   componentWillUnmount() {
-    this.keyboardDidShowListener.remove();
+    if (Platform.OS === 'ios') {
+      this.keyboardWillShowListener.remove();
+    } else {
+      this.keyboardDidShowListener.remove();
+    }
     this.keyboardDidHideListener.remove();
   }
 
+  _keyboardWillShow(e) {
+    if (!this.keyboardHeight) {
+      this.keyboardHeight = e.endCoordinates.height;
+    }
+    this.setState({ keyboardShowing: true })
+  }
+
   _keyboardDidShow() {
-    this.keyboardShowing = true;
+    this.setState({ keyboardShowing: true })
   }
 
   _keyboardDidHide() {
-    this.keyboardShowing = false;
+    this.setState({ keyboardShowing: false })
   }
 
   handleAdd() {
@@ -179,7 +199,7 @@ export default class Stem extends React.PureComponent {
         this.updatedReflections = true;
       }
     } else {
-      if (this.keyboardShowing) {
+      if (this.state.keyboardShowing) {
         this.input.blur();
       } else {
         this.input.focus();
@@ -211,7 +231,10 @@ export default class Stem extends React.PureComponent {
   }
 
   updateStem() {
-    this.keyboardShowing && Keyboard.dismiss();
+    if (this.state.keyboardShowing) {
+      this.setState({ keyboardShowing: false });
+      Keyboard.dismiss();
+    }
     const { index, value } = this.state;
     const { thoughts, reflections } = this.state;
     let updatedThoughts = [];
@@ -280,7 +303,7 @@ const styles = ScaledSheet.create({
   bottomView: {
     backgroundColor: '#FFFFFF',
     height: '130@vs',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingBottom: '60@ms',
     zIndex: 10,
   },
@@ -292,6 +315,11 @@ const styles = ScaledSheet.create({
     justifyContent: 'center',
     position: 'absolute',
     width: '45@ms',
+  },
+  buttons: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   buttonIcon: {
     color: '#FFFFFF',
@@ -326,6 +354,13 @@ const styles = ScaledSheet.create({
     fontSize: fonts.medium,
     paddingHorizontal: '15@ms',
     width: '90%',
+  },
+  iosInput: {
+    borderBottomColor: colors.primary,
+    borderBottomWidth: 1,
+  },
+  keyboardPadding: {
+    height: '250@vs',
   },
   scrollview: {
     alignItems: 'center',
