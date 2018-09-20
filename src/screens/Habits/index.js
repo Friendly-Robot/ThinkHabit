@@ -1210,7 +1210,7 @@ const styles = ScaledSheet.create({
   },
   caret: {
     color: '#FFFFFF',
-    fontSize: fonts.medium,
+    fontSize: fonts.small,
   },
   caretContainer: {
     left: '15@ms',
