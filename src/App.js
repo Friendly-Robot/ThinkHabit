@@ -909,6 +909,8 @@ export default class App extends React.Component {
   }
 
   passNavigationContext(context) {
-    this.setState({ navigation: context });
+    if (!this.state.navigation) {
+      this.setState({ navigation: context });
+    }
   }
 }
