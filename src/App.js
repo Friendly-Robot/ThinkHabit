@@ -11,6 +11,7 @@ import Settings from './screens/Settings';
 import About from './screens/About';
 import PushNotification from 'react-native-push-notification'
 import Data from './config/data';
+import { NavigationActions } from 'react-navigation';
 
 if (!__DEV__) {
   console.log = () => {};
@@ -32,6 +33,7 @@ const HabitsNavigator = createStackNavigator({
           habitSeq={props.screenProps.Settings.habitSeq}
           navigation={props.navigation}
           numberOfStemsPerDay={props.screenProps.Settings.numberOfStemsPerDay}
+          passNavigationContext={props.screenProps.passNavigationContext}
           repeat={props.screenProps.Settings.repeat}
           reflectNotificationTime={props.screenProps.Settings.reflectNotificationTime}
           reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
@@ -110,6 +112,7 @@ const AppNavigator = createDrawerNavigator({
             appReady={props.screenProps.appReady} 
             appSet={props.screenProps.appSet} 
             navigation={props.navigation}
+            passNavigationContext={props.screenProps.passNavigationContext}
           />
         )
       }
@@ -148,7 +151,8 @@ export default class App extends React.Component {
       Responsibility: {},
       Courage: {},
       Freedom: {},
-    } 
+    }
+    this.passNavigationContext = this.passNavigationContext.bind(this);
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
     this.updateStemInRealm = this.updateStemInRealm.bind(this);
@@ -162,6 +166,9 @@ export default class App extends React.Component {
       // (required) Called when a remote or local notification is opened or received
       onNotification: (notification) => {
         console.log( 'ON NOTIFICATION:', notification );
+
+        setTimeout(() => this.handleOpenedNotification(notification.tag), 500);
+
         // ** How do we handle not sending the same unopened stem??
         this.setNextPushNotification();
         
@@ -220,6 +227,7 @@ export default class App extends React.Component {
           Courage,
           Freedom,
 
+          passNavigationContext: this.passNavigationContext,
           toggleHabitProgress: this.toggleHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
           updateStemInRealm: this.updateStemInRealm,
@@ -231,6 +239,10 @@ export default class App extends React.Component {
   componentDidMount() {
     this.initializeApp();
     setTimeout(() => this.setNextPushNotification(), 1000);
+  }
+
+  componentWillUnmount() { 
+    this.attemptNavigation = 0;
   }
 
   initializeApp() {
@@ -398,6 +410,29 @@ export default class App extends React.Component {
   //   this.state.navigation.dispatch(navigateAction);
   // }
 
+  handleOpenedNotification(notification) {
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const Stem = realm.objectForPrimaryKey('Stem', notification['id']);
+      if (Stem['date']) {
+        notification['date'] = Stem['date'];
+        notification['thoughts'] = Stem['thoughts'];
+        notification['reflections'] = Stem['reflections'];
+        const navigateAction = NavigationActions.navigate({
+          routeName: 'Stem',
+          params: notification,
+        });
+        this.state.navigation.dispatch(navigateAction);
+      } else {
+        const navigateAction = NavigationActions.navigate({
+          routeName: 'Stem',
+          params: notification,
+        });
+        this.state.navigation.dispatch(navigateAction);
+      }
+    });
+  }
+
   setNextPushNotification(queuedStem) {
     PushNotification.cancelAllLocalNotifications();
     const { Settings } = this.state;
@@ -412,7 +447,7 @@ export default class App extends React.Component {
       //   id: 'string',
       //   stem: 'string',
       //   habit: 'string',
-      //   reflect: 'bool',
+      //   reflection: 'bool',
       // }
       if (queueRef.length === 0) {
         // Populate queueRef with notifications
@@ -450,6 +485,220 @@ export default class App extends React.Component {
     });
     console.log('Notification QUEUE:', notification);
     console.log('Notification:', notification);
+
+    const date = new Date();
+    const { thinkNotificationDay, thinkNotificationTime, reflectNotificationDay } = Settings;
+    const today = date.getDay();
+    const hourNow = date.getHours();
+    const millisecondsLeftInHour = (60 - date.getMinutes()) * 60 * 1000;
+    const millisecondsInHour = 3600000;
+    const millisecondsInDay = 86400000;
+    let nextThinkNotificationTime;
+    let nextReflectNotificationTime;
+    let millisecondsTillNextNotification = 0;
+    const thinkTitles = ['Food for thought', currHabit, 'Complete this sentence', `Build a ${currHabit.toLowerCase()} mindset`];
+    const reflectTitles = ['Reflect', 'How was your day?', 'Mark your improvements', `Reflect on ${currHabit.toLowerCase()}`];
+    let title;
+
+    if (thinkNotificationTime.length && reflectNotificationTime.length) {
+      // Find the next nearest hour in the same day
+      thinkNotificationTime.some((hour) => {
+        if (hour > hourNow) {
+          nextThinkNotificationTime = hour;
+          return true;
+        }
+      });
+      reflectNotificationTime.some((hour) => {
+        if (hour > hourNow) {
+          nextReflectNotificationTime = hour;
+          return true;
+        }
+      });
+  
+      if (!nextThinkNotificationTime && !nextReflectNotificationTime) {
+        // If the next nearest hour does not exist later in the same day
+        // Look for the next nearest hour in the following day.
+        if (!nextThinkNotificationTime) {
+          nextThinkNotificationTime = thinkNotificationTime[0];
+        }
+        if (!nextReflectNotificationTime) {
+          nextReflectNotificationTime = reflectNotificationTime[0];
+        }
+      }
+  
+      let sameThinkDay;
+      let nextThinkDay;
+      let daySought;
+      if (today < thinkNotificationDay[thinkNotificationDay.length - 1] || today < reflectNotificationDay[reflectNotificationDay.length - 1]) {
+        daySought = 'greater';
+      } else {
+        daySought = 'least';
+      }
+      thinkNotificationDay.map((day) => {
+        if (day === today) {
+          if (nextThinkNotificationTime > hourNow) {
+            sameThinkDay = true;
+          }
+        }
+      });
+      if (!sameThinkDay) {
+        if (daySought === 'least') {
+          nextThinkDay = thinkNotificationDay[0];
+        } else if (daySought === 'greater') {
+          thinkNotificationDay.some((day) => {
+            if (day > today) {
+              nextThinkDay = day;
+              return true;
+            }
+          });
+        }
+        nextThinkNotificationTime = thinkNotificationTime[0];
+      }
+      let sameReflectDay;
+      let nextReflectDay;
+      reflectNotificationDay.map((day) => {
+        if (day === today) {
+          if (nextReflectNotificationTime > hourNow) {
+            sameReflectDay = true;
+          }
+        }
+      });
+      if (!sameReflectDay) {
+        if (daySought === 'least') {
+          nextReflectDay = reflectNotificationDay[0];
+        } else if (daySought === 'greater') {
+          reflectNotificationDay.some((day) => {
+            if (day > today) {
+              nextReflectDay = day;
+              return true;
+            }
+          });
+        }
+        nextReflectNotificationTime = reflectNotificationTime[0];
+      }
+
+      console.log('Pre calculation variables', daySought, sameThinkDay, nextThinkDay, sameReflectDay, nextReflectDay, nextThinkNotificationTime, nextReflectNotificationTime)
+
+      if (sameThinkDay && sameReflectDay) {
+        if (nextThinkNotificationTime < nextReflectNotificationTime) {
+          const timeBetween = nextThinkNotificationTime - hourNow;
+          millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+          title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)]
+          console.log('nextThinkNotificationTime < nextReflectNotificationTime')
+        } else {
+          const timeBetween = nextReflectNotificationTime - hourNow;
+          millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+          title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
+          notification.reflection = true;   
+          console.log('nextThinkNotificationTime > nextReflectNotificationTime')
+        }
+  
+  
+  
+      } else if (sameThinkDay || sameReflectDay) {
+        if (sameThinkDay) {
+          const timeBetween = nextThinkNotificationTime - hourNow;
+          millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+          title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)]
+          console.log('sameThinkDay')
+        } else {
+          const timeBetween = nextReflectNotificationTime - hourNow;
+          millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+          title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
+          notification.reflection = true;   
+          console.log('sameReflectDay')
+        }
+  
+  
+  
+      } else if (daySought === 'least') {
+        const millisecondsLeftInDay = ((24 - hourNow) * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+        if (nextThinkDay < nextReflectDay) {
+          millisecondsTillNextNotification = millisecondsLeftInDay + (((7 - today) * millisecondsInDay) + (nextThinkDay * millisecondsInDay)) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
+          title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)];
+          console.log('daySought === "least" &&  nextThinkDay < nextReflectDay')        
+        } else {
+          millisecondsTillNextNotification = millisecondsLeftInDay + (((7 - today) * millisecondsInDay) + (nextReflectDay * millisecondsInDay)) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
+          title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
+          notification.reflection = true;   
+          console.log('daySought === "least" && nextThinkDay > nextReflectDay')
+        }
+  
+  
+  
+      } else if (daySought === 'greater') {
+        const millisecondsLeftInDay = ((24 - hourNow) * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+        if (nextThinkDay > nextReflectDay) {
+          millisecondsTillNextNotification = millisecondsLeftInDay + ((nextReflectDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
+          title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)]
+          console.log('daySought === "greater" && nextThinkDay > nextReflectDay')     
+        } else if (nextThinkDay < nextReflectDay) {
+          millisecondsTillNextNotification = millisecondsLeftInDay + ((nextThinkDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
+          title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
+          notification.reflection = true;   
+          console.log('daySought === "greater" && nextThinkDay < nextReflectDay')
+        } else if (nextThinkDay === nextReflectDay) {
+          if (nextThinkNotificationTime < nextReflectNotificationTime) {
+            millisecondsTillNextNotification = millisecondsLeftInDay + ((nextReflectDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
+            title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)]
+            console.log('nextThinkDay === nextReflectDay && nextThinkNotificationTime < nextReflectNotificationTime')        
+          } else {
+            millisecondsTillNextNotification = millisecondsLeftInDay + ((nextReflectDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
+            title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
+            notification.reflection = true;   
+            console.log('nextThinkDay === nextReflectDay && nextThinkNotificationTime > nextReflectNotificationTime')
+          }
+        } else if (nextThinkDay) {
+          millisecondsTillNextNotification = millisecondsLeftInDay + ((nextThinkDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
+          title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
+          notification.reflection = true;   
+          console.log('daySought === "greater" && nextThinkDay')
+        } else if (nextReflectDay) {
+          millisecondsTillNextNotification = millisecondsLeftInDay + ((nextReflectDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
+          title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)]
+          console.log('daySought === "greater" && nextReflectDay')   
+        }
+      }
+
+    } else if (thinkNotificationTime.length) {
+      
+      millisecondsTillNextNotification = this.getTimeForSingleNotificationBatch(thinkNotificationTime, thinkNotificationDay, hourNow, today, millisecondsInDay, millisecondsInHour, millisecondsLeftInHour);
+      title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)]      
+      console.log('thinkNotificationTime.length')
+
+    } else if (reflectNotificationTime.length) {
+
+      millisecondsTillNextNotification = this.getTimeForSingleNotificationBatch(reflectNotificationTime, reflectNotificationDay, hourNow, today, millisecondsInDay, millisecondsInHour, millisecondsLeftInHour);
+      title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
+      notification.reflection = true;   
+      console.log('reflectNotificationTime.length')
+
+    } else {
+      // Something is wrong. We shouldn't ever be in this scenario.
+      console.log('SERIOUS ERROR: NOTIFICATION IS EMPTY!');
+      return;
+    }
+
+    console.log('NOTIFICATION VARIABLES:')
+    console.log('thinkNotificationTime', thinkNotificationTime)
+    console.log('reflectNotificationTime', reflectNotificationTime)
+    console.log('nextThinkNotificationTime', nextThinkNotificationTime)
+    console.log('thinkNotificationDay', thinkNotificationDay)
+    console.log('nextReflectNotificationTime', nextReflectNotificationTime)
+    console.log('reflectNotificationDay', reflectNotificationDay)
+    console.log('millisecondsTillNextNotification', millisecondsTillNextNotification)
+    // console.log('sameThinkDay', sameThinkDay)
+    // console.log('sameReflectDay', sameReflectDay)
+    // console.log('nextThinkDay', nextThinkDay)
+    // console.log('nextReflectDay', nextReflectDay)
+    // console.log('daySought', daySought)
+
+
+
+    const dateOfNotification = new Date(Date.now() + millisecondsTillNextNotification);
+
+    console.log('date of notification', dateOfNotification)
+
     PushNotification.localNotificationSchedule({
       /* Android Only Properties */
       // id: '0', // (optional) Valid unique 32 bit integer specified as string. default: Autogenerated Unique ID
@@ -475,7 +724,7 @@ export default class App extends React.Component {
       // userInfo: // (optional) default: null (object containing additional notification data)
 
       /* iOS and Android properties */
-      // title: notification.stem, // (optional)
+      title: title, // (optional)
       message: notification.stem, // (required)
       playSound: true, // (optional) default: true
       soundName: 'default', // (optional) Sound to play when the notification is shown. Value of 'default' plays the default sound. It can be set to a custom sound such as 'android.resource://com.xyz/raw/my_sound'. It will look for the 'my_sound' audio file in 'res/raw' directory and play it. default: 'default' (default sound is played)
@@ -484,8 +733,61 @@ export default class App extends React.Component {
       repeatTime: 86400000,
       // actions: '["Later", "Think"]',  // (Android only) See the doc for notification actions to know more
 
-      date: new Date(Date.now() + (60 * 1000)) // in 60 secs
+      date: new Date(Date.now() + 10000), //dateOfNotification, 
     });
+  }
+
+  getTimeForSingleNotificationBatch(timeArray, dayArray, hourNow, today, millisecondsInDay, millisecondsInHour, millisecondsLeftInHour) {
+    let nextThinkNotificationTime;
+    let millisecondsTillNextNotification;
+    timeArray.some((hour) => {
+      if (hour > hourNow) {
+        nextThinkNotificationTime = hour;
+        return true;
+      }
+    });
+    let sameThinkDay;
+    let nextThinkDay;
+    let daySought;
+    if (today < dayArray[dayArray.length - 1]) {
+      daySought = 'greater';
+    } else {
+      daySought = 'least';
+    }
+    dayArray.map((day) => {
+      if (day === today) {
+        if (nextThinkNotificationTime > hourNow) {
+          sameThinkDay = true;
+        }
+      }
+    });
+    if (!sameThinkDay) {
+      if (daySought === 'least') {
+        nextThinkDay = dayArray[0];
+      } else if (daySought === 'greater') {
+        dayArray.some((day) => {
+          if (day > today) {
+            nextThinkDay = day;
+            return true;
+          }
+        });
+      }
+      nextThinkNotificationTime = timeArray[0];
+    }
+    if (sameThinkDay) {
+      const timeBetween = nextThinkNotificationTime - hourNow;
+      millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+      console.log('getTimeForSingleNotificationBatch && sameThinkDay')
+    } else if (daySought === 'least') {
+      const millisecondsLeftInDay = ((24 - hourNow) * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+      millisecondsTillNextNotification = millisecondsLeftInDay + (((7 - today) * millisecondsInDay) + (nextThinkDay * millisecondsInDay)) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
+      console.log('getTimeForSingleNotificationBatch && daySought === "least"') 
+    } else if (daySought === 'greater') {
+      const millisecondsLeftInDay = ((24 - hourNow) * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+      millisecondsTillNextNotification = millisecondsLeftInDay + ((nextThinkDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
+      console.log('getTimeForSingleNotificationBatch && daySought === "greater"')  
+    }
+    return millisecondsTillNextNotification;
   }
 
   resetNewStemsToQueue(numberOfStemsPerDay, currHabit) {
@@ -604,5 +906,9 @@ export default class App extends React.Component {
         });
       }
     });
+  }
+
+  passNavigationContext(context) {
+    this.setState({ navigation: context });
   }
 }
