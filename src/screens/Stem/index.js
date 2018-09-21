@@ -75,6 +75,7 @@ export default class Stem extends React.PureComponent {
     } = this.state;
 
     const { params } = this.props.navigation.state;
+    console.log('date', params, params['date'], this.getPrettyDate(params['date']))
 
     return (
       <View style={styles.container}>
@@ -118,6 +119,9 @@ export default class Stem extends React.PureComponent {
                   return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
                 })
               }
+              {
+                params && params['date'] && <Text style={styles.date}>{ this.getPrettyDate(params['date']) }</Text>
+              }
             </View>
           </ScrollView>
           <ScrollView 
@@ -132,6 +136,9 @@ export default class Stem extends React.PureComponent {
                 const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
                 return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
               })
+            }
+            {
+              params && params['date'] && <Text style={styles.date}>{ this.getPrettyDate(params['date']) }</Text>
             }
           </View>
         </ScrollView>
@@ -276,6 +283,11 @@ export default class Stem extends React.PureComponent {
     this.setState({ index: this.swiper.state.index });
   }
 
+  getPrettyDate(int) {
+    const date = new Date(int);
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  }
+
   updateStem() {
     if (this.state.keyboardShowing) {
       this.setState({ keyboardShowing: false });
@@ -401,6 +413,13 @@ const styles = ScaledSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     flex: 1,
+  },
+  date: {
+    color: colors.darkGrey,
+    textAlign: 'center',
+    fontSize: fonts.small,
+    fontStyle: 'italic',
+    marginTop: '15@vs',
   },
   dot: {
     borderColor: colors.primary,
