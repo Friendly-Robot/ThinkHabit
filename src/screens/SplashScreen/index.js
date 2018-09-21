@@ -15,6 +15,10 @@ export default class SplashScreen extends React.PureComponent {
     )
   }
 
+  componentDidMount() {
+    setTimeout(() => this.props.passNavigationContext(this.props.navigation), 0);
+  }
+
   componentWillReceiveProps(nextProps) {
     if (this.props.appReady !== nextProps.appReady) {
       const appSet = nextProps.appSet;

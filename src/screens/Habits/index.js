@@ -689,6 +689,7 @@ export default class Habits extends React.PureComponent {
   }
 
   componentDidMount() {
+    this.props.passNavigationContext(this.props.navigation);
     this.initNotificationData();
     this.initFunctions();
   }
