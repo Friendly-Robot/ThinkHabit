@@ -65,6 +65,7 @@ export default class Habits extends React.PureComponent {
       habitSeq,
       navigation,
       // numberOfStemsPerDay,
+      queue,
       // repeat,
       // reflectNotificationTime, 
       // reflectNotificationDay, 
@@ -680,6 +681,7 @@ export default class Habits extends React.PureComponent {
                 habit={habit}
                 key={habit}
                 navigateToStem={this.navigateToStem}
+                queue={queue}
               />
             ))
           }
@@ -1096,12 +1098,13 @@ class Habit extends React.PureComponent {
   }
 
   _renderItem({item}) {
-    const { completedStems, habit, navigateToStem } = this.props;
+    const { completedStems, habit, navigateToStem, queue } = this.props;
     return (
       <StemCard
         completed={completedStems.indexOf(item.id) >= 0 ? true : false}
         habit={habit}
         navigateToStem={navigateToStem}
+        queue={queue}
         stem={item}
       />
     )
@@ -1128,6 +1131,7 @@ class StemCard extends React.PureComponent {
       completed,
       // habit,
       // navigateToStem,
+      queue,
       stem,
     } = this.props;
 
@@ -1150,13 +1154,27 @@ class StemCard extends React.PureComponent {
             </Text>
           </View>
           <View style={stemStyles.buttons}>
-            <TouchableOpacity
-              activeOpacity={.8}
-              onPress={() => {}}
-              style={[stemStyles.button, stemStyles.buttonBorder]}
-            >
-              <Text style={stemStyles.buttonText}>Queue</Text>
-            </TouchableOpacity>
+            {
+              queue.some(s => JSON.parse(s).id === stem.id) ?
+              <TouchableOpacity
+                activeOpacity={.8}
+                onPress={() => {}}
+                style={stemStyles.dotContainer}
+              >
+                <View style={stemStyles.dot}/>
+                <View style={stemStyles.dot}/>
+                <View style={stemStyles.dot}/>
+              </TouchableOpacity>
+              :
+              <TouchableOpacity
+                activeOpacity={.8}
+                onPress={() => {}}
+                style={[stemStyles.button, stemStyles.buttonBorder]}
+              >
+                <Text style={stemStyles.buttonText}>Queue</Text>
+              </TouchableOpacity>
+            }
+
             <TouchableOpacity
               activeOpacity={.8}
               onPress={this.handleThink}
@@ -1254,6 +1272,19 @@ const stemStyles = ScaledSheet.create({
     marginBottom: '25@vs',
     padding: '15@ms',
     width: '90%',
+  },
+  dot: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    height: 5,
+    marginHorizontal: 2,
+    width: 5,
+  },
+  dotContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: '23@ms',
   },
   scrollview: {
     alignItems: 'center',
