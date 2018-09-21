@@ -1127,7 +1127,7 @@ class StemCard extends React.PureComponent {
     }
     this.state = {
       realmStem: {},
-      inQueue: props.queue.some(s => JSON.parse(s).id === props.stem.id),
+      inQueue: props.queue.some(s => s.id === props.stem.id),
     }
     this.handleThink = this.handleThink.bind(this);
     this.updateRealmStem = this.updateRealmStem.bind(this);

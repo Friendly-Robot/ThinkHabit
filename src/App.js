@@ -35,7 +35,7 @@ const HabitsNavigator = createStackNavigator({
           navigation={props.navigation}
           numberOfStemsPerDay={props.screenProps.Settings.numberOfStemsPerDay}
           passNavigationContext={props.screenProps.passNavigationContext}
-          queue={props.screenProps.Settings.queue}
+          queue={props.screenProps.queue}
           repeat={props.screenProps.Settings.repeat}
           reflectNotificationTime={props.screenProps.Settings.reflectNotificationTime}
           reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
@@ -146,6 +146,7 @@ export default class App extends React.Component {
       appReady: false,
       appSet: false,
       navigation: null,
+      queue: [],
       Settings: {},
       Confidence: {},
       Meditation: {},
@@ -207,6 +208,7 @@ export default class App extends React.Component {
     const {
       appReady,
       appSet,
+      queue,
       Settings,
       Confidence,
       Meditation,
@@ -221,6 +223,7 @@ export default class App extends React.Component {
         screenProps={{
           appReady,
           appSet,
+          queue,
 
           Settings,
           Confidence,
@@ -281,6 +284,7 @@ export default class App extends React.Component {
           Settings.currDay = day;
         });
       }
+      const queue = Settings.queue.map((item) => JSON.parse(item));
       const Habits = realm.objects('Habit');
       let Confidence = {};
       let Meditation = {};
@@ -313,6 +317,7 @@ export default class App extends React.Component {
       this.setState({ 
         appReady: true,
         appSet: true,
+        queue,
         Settings,
         Confidence,
         Meditation,
@@ -439,8 +444,8 @@ export default class App extends React.Component {
 
   setNextPushNotification(queuedStem) {
     PushNotification.cancelAllLocalNotifications();
-    const { Settings } = this.state;
-    const { currHabit, numberOfStemsPerDay, queue, reflectNotificationTime, repeat } = Settings;
+    const { queue, Settings } = this.state;
+    const { currHabit, numberOfStemsPerDay, reflectNotificationTime, repeat } = Settings;
     if (!currHabit && !queuedStem) return;
     let notification = {};
     let queueRef = [...queue];
@@ -462,11 +467,11 @@ export default class App extends React.Component {
           queueRef = this.resetNewStemsToQueue(numberOfStemsPerDay, currHabit);
         }
       }
-      const queuedNotification = JSON.parse(queueRef.shift());
+      const queuedNotification = queueRef.shift();
       const multiply = reflectNotificationTime.length ? 2 : 1;
       if (queuedNotification.notified + 1 !== repeat * multiply) { // * multiply to factor in reflections
         queuedNotification.notified += 1;
-        queueRef.unshift(JSON.stringify(queuedNotification));
+        queueRef.unshift(queuedNotification);
         // ** Pay attention to whether a reflection is coming up for the most recent think habit
       }
 
@@ -479,13 +484,14 @@ export default class App extends React.Component {
         stem: queuedStem['stem'],
         habit: queuedStem['habit'],
       }
-      queueRef.unshift(JSON.stringify(notification));
+      queueRef.unshift(notification);
     }
+    const settingsQueue = queueRef.map((item) => JSON.stringify(item));
+    this.setState({ queue: queueRef });
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       realm.write(() => {
-        Settings['queue'] = queueRef;
-        this.setState({ Settings: { ...Settings } });
+        Settings['queue'] = settingsQueue;
       });
     });
     console.log('Notification QUEUE:', notification);
@@ -502,7 +508,7 @@ export default class App extends React.Component {
     let nextReflectNotificationTime;
     let millisecondsTillNextNotification = 0;
     const thinkTitles = ['Food for thought', currHabit, 'Complete this sentence', `Build a ${currHabit.toLowerCase()} mindset`];
-    const reflectTitles = ['Reflect', 'How was your day?', 'Mark your improvements', `Reflect on ${currHabit.toLowerCase()}`];
+    const reflectTitles = ['Reflect on', 'How was your day?', 'Mark your improvements', `Reflect on ${currHabit.toLowerCase()}`];
     let title;
 
     if (thinkNotificationTime.length && reflectNotificationTime.length) {
@@ -804,24 +810,24 @@ export default class App extends React.Component {
       let id = Data[currHabit][randomThought]['id'];
       if (!addedToQueue[id]) {
         addedToQueue[id] = true;
-        const stem = JSON.stringify({
+        const stem = {
           notified: 0,
           id,
           stem: Data[currHabit][randomThought]['stem'],
           habit: currHabit,
-        });
+        };
         queue.push(stem);
       } else {
         while (addedToQueue[id]) {
           randomThought = Math.floor(Math.random() * length);
           id = Data[currHabit][randomThought]['id'];
           if (!addedToQueue[id]) {
-            const stem = JSON.stringify({
+            const stem = {
               notified: 0,
               id,
               stem: Data[currHabit][randomThought]['stem'],
               habit: currHabit,
-            });
+            };
             queue.push(stem);
           }
         }
@@ -838,12 +844,12 @@ export default class App extends React.Component {
       for (let j = 0; j < Data[currHabit].length; j += 1) {
         const id = Data[currHabit][j]['id'];
         if (!addedToQueue[id] && completedStems.indexOf(id) === -1) {
-          const stem = JSON.stringify({
+          const stem = {
             notified: 0,
             id,
             stem: Data[currHabit][j]['stem'],
             habit: currHabit,
-          });
+          };
           queue.push(stem);
           addedToQueue[id] = true;
           break;
