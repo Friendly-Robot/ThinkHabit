@@ -21,7 +21,7 @@ export default data = {
   ],
   Relationships: [
     {
-      stem: 'If pay more attention to how I deal with people today…',
+      stem: 'If I pay more attention to how I deal with people today…',
       id: '1IJRJFMP',
     },
     {
