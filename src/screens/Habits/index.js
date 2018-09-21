@@ -991,10 +991,10 @@ export default class Habits extends React.PureComponent {
       TNT,
       TND,
     } = this.state;
-    const reflectNotificationTime = [];
-    const reflectNotificationDay = [];
-    const thinkNotificationTime = [];
-    const thinkNotificationDay = [];
+    let reflectNotificationTime = [];
+    let reflectNotificationDay = [];
+    let thinkNotificationTime = [];
+    let thinkNotificationDay = [];
     for (let time in RNT) {
       reflectNotificationTime.push(parseInt(time))
     }
@@ -1011,6 +1011,14 @@ export default class Habits extends React.PureComponent {
       thinkNotificationDay.push(parseInt(day))
     }
     thinkNotificationDay.sort(function(a, b){return a-b});
+    if ((thinkNotificationDay.length && !thinkNotificationTime.length) ||  (!thinkNotificationDay.length && thinkNotificationTime.length)) {
+      thinkNotificationDay = [];
+      thinkNotificationTime = [];
+    }
+    if ((reflectNotificationDay.length && !reflectNotificationTime.length) ||  (!reflectNotificationDay.length && reflectNotificationTime.length)) {
+      reflectNotificationDay = [];
+      reflectNotificationTime = [];
+    }
     let updatedCurrHabit = '';
     if (inProgress) updatedCurrHabit = habitSeq[index];
     if (!inProgress && currHabit === habitSeq[index]) updatedCurrHabit = '';
