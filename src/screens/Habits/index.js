@@ -55,6 +55,7 @@ export default class Habits extends React.PureComponent {
 
   render() {
     const {
+      addToQueue,
       // Confidence,
       // Meditation,
       // Relationships,
@@ -676,6 +677,7 @@ export default class Habits extends React.PureComponent {
           {
             habitSeq.map((habit) => (
               <Habit
+                addToQueue={addToQueue}
                 completedStems={this.props[habit]['completedStems']}
                 data={data[habit]}
                 habit={habit}
@@ -1098,9 +1100,10 @@ class Habit extends React.PureComponent {
   }
 
   _renderItem({item}) {
-    const { completedStems, habit, navigateToStem, queue } = this.props;
+    const { addToQueue, completedStems, habit, navigateToStem, queue } = this.props;
     return (
       <StemCard
+        addToQueue={addToQueue}
         completed={completedStems.indexOf(item.id) >= 0 ? true : false}
         habit={habit}
         navigateToStem={navigateToStem}
@@ -1119,8 +1122,12 @@ class Habit extends React.PureComponent {
 class StemCard extends React.PureComponent {
   constructor(props) {
     super(props);
+    this.queueFuncs = {
+      handleAddToQueue: () => this.handleAddToQueue(),
+    }
     this.state = {
       realmStem: {},
+      inQueue: props.queue.some(s => JSON.parse(s).id === props.stem.id),
     }
     this.handleThink = this.handleThink.bind(this);
     this.updateRealmStem = this.updateRealmStem.bind(this);
@@ -1128,14 +1135,15 @@ class StemCard extends React.PureComponent {
 
   render() {
     const {
+      // addToQueue,
       completed,
       // habit,
       // navigateToStem,
-      queue,
+      // queue,
       stem,
     } = this.props;
+    const { inQueue, realmStem } = this.state;
 
-    const { realmStem } = this.state;
     const reflect = completed && (realmStem['reflections'] && realmStem['reflections'].length === 0);
 
     return (
@@ -1155,7 +1163,7 @@ class StemCard extends React.PureComponent {
           </View>
           <View style={stemStyles.buttons}>
             {
-              queue.some(s => JSON.parse(s).id === stem.id) ?
+              inQueue ?
               <TouchableOpacity
                 activeOpacity={.8}
                 onPress={() => {}}
@@ -1168,7 +1176,7 @@ class StemCard extends React.PureComponent {
               :
               <TouchableOpacity
                 activeOpacity={.8}
-                onPress={() => {}}
+                onPress={this.queueFuncs['handleAddToQueue']}
                 style={[stemStyles.button, stemStyles.buttonBorder]}
               >
                 <Text style={stemStyles.buttonText}>Queue</Text>
@@ -1217,6 +1225,17 @@ class StemCard extends React.PureComponent {
       params = { habit, ...stem, updateRealmStem: this.updateRealmStem };
     }
     navigateToStem(params);
+  }
+
+  handleAddToQueue() {
+    const { addToQueue, stem } = this.props;
+    const { realmStem } = this.state;
+    if (Object.keys(this.state.realmStem).length) {
+      addToQueue(realmStem);
+    } else {
+      addToQueue(stem);
+    }
+    this.setState({ inQueue: true });
   }
 }
 

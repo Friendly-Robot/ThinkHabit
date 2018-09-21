@@ -22,6 +22,7 @@ const HabitsNavigator = createStackNavigator({
     screen: function(props) {
       return (
         <Habits
+          addToQueue={props.screenProps.addToQueue}
           appSet={props.screenProps.appSet}
           Confidence={props.screenProps.Confidence}
           Meditation={props.screenProps.Meditation}
@@ -153,6 +154,7 @@ export default class App extends React.Component {
       Courage: {},
       Freedom: {},
     }
+    this.addToQueue = this.addToQueue.bind(this);
     this.passNavigationContext = this.passNavigationContext.bind(this);
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
@@ -228,6 +230,7 @@ export default class App extends React.Component {
           Courage,
           Freedom,
 
+          addToQueue: this.addToQueue,
           passNavigationContext: this.passNavigationContext,
           toggleHabitProgress: this.toggleHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
@@ -482,6 +485,7 @@ export default class App extends React.Component {
     .then(realm => {
       realm.write(() => {
         Settings['queue'] = queueRef;
+        this.setState({ Settings: { ...Settings } });
       });
     });
     console.log('Notification QUEUE:', notification);
@@ -913,5 +917,13 @@ export default class App extends React.Component {
     if (!this.state.navigation) {
       this.setState({ navigation: context });
     }
+  }
+
+  addToQueue(stem) {
+    this.setNextPushNotification(stem);
+  }
+
+  removeFromQueue() {
+
   }
 }
