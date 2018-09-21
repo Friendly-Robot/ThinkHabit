@@ -18,7 +18,6 @@ import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
 export default class Stem extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.opaqueLevel = .15;
     this.reflectionMap = {};
     this.thoughtMap = {};
     this.updatedThoughts;
@@ -163,7 +162,7 @@ export default class Stem extends React.PureComponent {
             onPress={this.updateStem}
             style={styles.checkContainer}
           >
-            <View style={[styles.button, styles.checkButton, { opacity: index === 1 && keyboardShowing ? 1 : this.opaqueLevel }]}>
+            <View style={[styles.button, styles.checkButton, { opacity: this.updatedThoughts || this.updatedReflections ? 1 : 0 }]}>
               {
                 saving ?
                 <ActivityIndicator size={'small'} color={'#FFFFFF'} />
@@ -232,7 +231,6 @@ export default class Stem extends React.PureComponent {
         }
         const { thoughts } = this.state;
         const res = [value, ...thoughts];
-        this.opaqueLevel += .15;
         this.setState({ thoughts: res, value: '' });
         this.updatedThoughts = true;
       } else {
@@ -315,7 +313,8 @@ export default class Stem extends React.PureComponent {
     }
     this.setState({ saving: true });
     setTimeout(() => {
-      this.opaqueLevel = .15;
+      this.updatedReflections = false;
+      this.updatedThoughts = false;
       this.mounted && this.setState({ saving: false });
     }, 1500);
     const { updateStemInRealm } = this.props;
@@ -338,8 +337,6 @@ export default class Stem extends React.PureComponent {
       };
       updateStemInRealm(params['id'], newStem, 'new');
     }
-    this.updatedReflections = false;
-    this.updatedThoughts = false;
     this.setState({ value: '' });
     setTimeout(() => {
       if (this.mounted) {
