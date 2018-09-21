@@ -34,6 +34,7 @@ const HabitsNavigator = createStackNavigator({
           navigation={props.navigation}
           numberOfStemsPerDay={props.screenProps.Settings.numberOfStemsPerDay}
           passNavigationContext={props.screenProps.passNavigationContext}
+          queue={props.screenProps.Settings.queue}
           repeat={props.screenProps.Settings.repeat}
           reflectNotificationTime={props.screenProps.Settings.reflectNotificationTime}
           reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
