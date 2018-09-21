@@ -19,6 +19,10 @@ import Schema from '../../config/realm';
 export default class Habits extends React.PureComponent {
   constructor(props) {
     super(props);
+    this.auxTN;
+    this.auxTNType;
+    this.auxRN;
+    this.auxRNType;
     this.vs65 = verticalScale(65);
     this.vs250 = height - this.vs65;
     this.animatedHeight = new Animated.Value(this.vs65);
@@ -864,11 +868,27 @@ export default class Habits extends React.PureComponent {
     if (TNT[time]) {
       const updatedTNT = {...TNT};
       delete updatedTNT[time];
-      this.setState({ TNT: updatedTNT, save: true });
+      if (Object.keys(updatedTNT).length === 0) {
+        this.auxTN = this.state.TND;
+        this.setState({ TNT: updatedTNT, TND: {}, save: true });
+        this.auxTNType = 'time';  
+      } else {
+        this.setState({ TNT: updatedTNT, save: true });
+      }
     } else {
       const updatedTNT = {...TNT};
       updatedTNT[time] = true;
-      this.setState({ TNT: updatedTNT, save: true });
+      if (Object.keys(updatedTNT).length === 1) {
+        if (this.auxTN && this.auxTNType === 'time') {
+          this.setState({ TNT: updatedTNT, TND: this.auxTN, save: true });
+        } else {
+          this.setState({ TNT: updatedTNT, save: true });          
+        }
+        this.auxTN = null;
+        this.auxTNType = null;
+      } else {
+        this.setState({ TNT: updatedTNT, save: true });
+      }
     }
   }
 
@@ -877,11 +897,27 @@ export default class Habits extends React.PureComponent {
     if (TND[day]) {
       const updatedTND = {...TND};
       delete updatedTND[day];
-      this.setState({ TND: updatedTND, save: true });
+      if (Object.keys(updatedTND).length === 0) {
+        this.auxTN = this.state.TNT;
+        this.setState({ TND: updatedTND, TNT: {}, save: true });
+        this.auxTNType = 'day';  
+      } else {
+        this.setState({ TND: updatedTND, save: true });
+      }
     } else {
       const updatedTND = {...TND};
       updatedTND[day] = true;
-      this.setState({ TND: updatedTND, save: true });
+      if (Object.keys(updatedTND).length === 1) {
+        if (this.auxTN && this.auxTNType === 'day') {
+          this.setState({ TND: updatedTND, TNT: this.auxTN, save: true });
+        } else {
+          this.setState({ TND: updatedTND, save: true });
+        }
+        this.auxTN = null;
+        this.auxTNType = null;
+      } else {
+        this.setState({ TND: updatedTND, save: true });
+      }
     }
   }
 
@@ -890,11 +926,27 @@ export default class Habits extends React.PureComponent {
     if (RNT[time]) {
       const updatedRNT = {...RNT};
       delete updatedRNT[time];
-      this.setState({ RNT: updatedRNT, save: true });
+      if (Object.keys(updatedRNT).length === 0) {
+        this.auxRN = this.state.RND;
+        this.setState({ RNT: updatedRNT, RND: {}, save: true });   
+        this.auxRNType = 'time';  
+      } else {
+        this.setState({ RNT: updatedRNT, save: true });
+      }
     } else {
       const updatedRNT = {...RNT};
       updatedRNT[time] = true;
-      this.setState({ RNT: updatedRNT, save: true });
+      if (Object.keys(updatedRNT).length === 1) {
+        if (this.auxRN && this.auxRNType === 'time') {
+          this.setState({ RNT: updatedRNT, RND: this.auxRN, save: true });
+        } else {
+          this.setState({ RNT: updatedRNT, save: true });
+        }
+        this.auxRN = null;
+        this.auxRNType = null;
+      } else {
+        this.setState({ RNT: updatedRNT, save: true });
+      }
     }
   }
 
@@ -903,11 +955,27 @@ export default class Habits extends React.PureComponent {
     if (RND[day]) {
       const updatedRND = {...RND};
       delete updatedRND[day];
-      this.setState({ RND: updatedRND, save: true });
+      if (Object.keys(updatedRND).length === 0) {
+        this.auxRN = this.state.RNT;
+        this.setState({ RND: updatedRND, RNT: {}, save: true });
+        this.auxRNType = 'day';  
+      } else {
+        this.setState({ RND: updatedRND, save: true });
+      }
     } else {
       const updatedRND = {...RND};
       updatedRND[day] = true;
-      this.setState({ RND: updatedRND, save: true });
+      if (Object.keys(updatedRND).length === 1) {
+        if (this.auxRN &&  this.auxRNType === 'day') {
+          this.setState({ RND: updatedRND, RNT: this.auxRN, save: true });
+        } else {
+          this.setState({ RND: updatedRND, save: true });
+        }
+        this.auxRN = null;
+        this.auxRNType = null;
+      } else {
+        this.setState({ RND: updatedRND, save: true });
+      }
     }
   }
 
