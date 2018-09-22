@@ -1117,7 +1117,7 @@ class Habit extends React.PureComponent {
   }
 
   _getItemLayout(data, index) {
-    const value = verticalScale(130);
+    const value = verticalScale(150);
     return {length: value, offset: value * index, index};
   }
 }
@@ -1303,7 +1303,8 @@ const stemStyles = ScaledSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     elevation: 2,
-    height: '130@vs',
+    height: '150@vs',
+    justifyContent: 'space-between',
     marginBottom: '25@vs',
     padding: '15@ms',
     width: '90%',
