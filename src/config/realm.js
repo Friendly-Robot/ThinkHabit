@@ -11,6 +11,18 @@ Habit.schema = {
   }
 };
 
+
+class QueueItem extends Realm.Object {};
+QueueItem.schema = {
+  name: 'QueueItem',
+  properties: {
+    notified: 'int',
+    id: 'string',
+    stem: 'string',
+    habit: 'string?',
+  }
+};
+
 class Stem extends Realm.Object {};
 Stem.schema = {
   name: 'Stem',
@@ -38,7 +50,7 @@ Settings.schema = {
     name: 'string?',
     numberOfStemsPerDay: 'int',
     picture: 'string?',
-    queue: 'string[]',
+    queue: { type: 'list', objectType: 'QueueItem' },
     repeat: 'int',
     reflectNotificationTime: 'int[]',
     reflectNotificationDay: 'int[]',
@@ -49,6 +61,7 @@ Settings.schema = {
 
 const Schema = [
   Habit,
+  QueueItem,
   Stem,
   Settings,
 ];
