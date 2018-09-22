@@ -354,7 +354,7 @@ export default class Stem extends React.PureComponent {
       if (this.mounted) {
         this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
       }
-    }, 1000);
+    }, 1500);
   }
 }
 
