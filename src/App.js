@@ -3,6 +3,7 @@ import { PushNotificationIOS } from 'react-native';
 import { createDrawerNavigator, createStackNavigator } from 'react-navigation';
 import Realm from 'realm';
 import Schema from './config/realm';
+import Navigator from './screens/Navigator';
 import SplashScreen from './screens/SplashScreen';
 import Selection from './screens/Selection';
 import Habits from './screens/Habits';
@@ -12,6 +13,10 @@ import About from './screens/About';
 import PushNotification from 'react-native-push-notification'
 import Data from './config/data';
 import { NavigationActions } from 'react-navigation';
+import Aicon from 'react-native-vector-icons/FontAwesome';
+import Micon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { moderateScale } from 'react-native-size-matters';
+
 
 if (!__DEV__) {
   console.log = () => {};
@@ -66,21 +71,38 @@ const HabitsNavigator = createStackNavigator({
 
 const AppNavigator = createDrawerNavigator({
   'Habits': {
-    screen: HabitsNavigator
+    screen: HabitsNavigator,
+    navigationOptions: {
+      drawerIcon: ({ tintColor }) => (
+        <Micon name={'brain'} color={tintColor} size={moderateScale(18)} />
+      ),
+    },
   },
   'Settings': {
     screen: function(props) {
       return (
-        <Settings/>
+        <Settings 
+          navigation={props.navigation}
+        />
       )
-    }
+    },
+    navigationOptions: {
+      drawerIcon: ({ tintColor }) => (
+        <Aicon name={'cogs'} color={tintColor} size={moderateScale(18)} />
+      ),
+    },
   },
   'About': {
     screen: function(props) {
       return (
         <About/>
       )
-    }
+    },
+    navigationOptions: {
+      drawerIcon: ({ tintColor }) => (
+        <Aicon name={'info-circle'} color={tintColor} size={moderateScale(18)} />
+      ),
+    },
   }
 }, {
   headerMode: 'none',
@@ -88,24 +110,25 @@ const AppNavigator = createDrawerNavigator({
     header: false,
   },
   initialRouteName: 'Habits',
-  // contentComponent: function(props) {
-  //   return (
-  //     <Navigator  
-  //       activeItemKey={props.activeItemKey}
-  //       favorites={props.screenProps.favorites}
-  //       getLabel={props.getLabel}
-  //       image={props.screenProps.image}
-  //       items={props.items}
-  //       lockQ={props.screenProps.lockQ}
-  //       name={props.screenProps.name}
-  //       navigation={props.navigation}
-  //       onItemPress={props.onItemPress}
-  //       playTap={props.screenProps.playTap}
-  //       queueLen={props.screenProps.queueLen}
-  //       renderIcon={props.renderIcon}
-  //     />
-  //   )
-  });
+  contentComponent: function(props) {
+    return (
+      <Navigator  
+        activeItemKey={props.activeItemKey}
+        favorites={props.screenProps.favorites}
+        getLabel={props.getLabel}
+        image={props.screenProps.image}
+        items={props.items}
+        lockQ={props.screenProps.lockQ}
+        name={props.screenProps.name}
+        navigation={props.navigation}
+        onItemPress={props.onItemPress}
+        playTap={props.screenProps.playTap}
+        queueLen={props.screenProps.queueLen}
+        renderIcon={props.renderIcon}
+      />
+    )
+  }
+});
   
   const BaseNavigator = createStackNavigator({
     'SplashScreen': {
