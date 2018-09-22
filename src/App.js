@@ -82,7 +82,14 @@ const AppNavigator = createDrawerNavigator({
     screen: function(props) {
       return (
         <Settings 
+          hideThoughts={props.screenProps.Settings.hideThoughts}
+          name={props.screenProps.Settings.name}
           navigation={props.navigation}
+          picture={props.screenProps.Settings.picture}
+          premium={props.screenProps.Settings.premium}
+          rated={props.screenProps.Settings.rated}
+          sound={props.screenProps.Settings.sound}
+          updateSettings={props.screenProps.updateSettings}
         />
       )
     },
@@ -183,6 +190,7 @@ export default class App extends React.Component {
     this.removeFromQueue = this.removeFromQueue.bind(this);    
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
+    this.updateSettings = this.updateSettings.bind(this);
     this.updateStemInRealm = this.updateStemInRealm.bind(this);
     PushNotification.configure({
 
@@ -261,6 +269,7 @@ export default class App extends React.Component {
           removeFromQueue: this.removeFromQueue,
           toggleHabitProgress: this.toggleHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
+          updateSettings: this.updateSettings,
           updateStemInRealm: this.updateStemInRealm,
         }}
       />
@@ -373,15 +382,19 @@ export default class App extends React.Component {
           currDay, 
           currHabit: '', 
           daysInRow: 0, 
-          habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'], 
+          habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
+          hideThoughts: false,
           joinDate, 
           name: '', 
           numberOfStemsPerDay: 1, 
           picture: '',
+          premium: false,
           queue: [],
+          rated: false,
           repeat: 3, 
           reflectNotificationTime, 
-          reflectNotificationDay, 
+          reflectNotificationDay,
+          sound: true,
           thinkNotificationTime, 
           thinkNotificationDay,
         });
@@ -395,14 +408,18 @@ export default class App extends React.Component {
         currHabit: '',
         daysInRow: 0,
         habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
+        hideThoughts: false,
         joinDate,
         name: '',
         numberOfStemsPerDay: 1,
         picture: '',
+        premium: false, // TODO Check IAP if purchase history found somehow?
         queue: [],
+        rated: false,
         repeat: 3, 
         reflectNotificationTime, 
         reflectNotificationDay,
+        sound: true,
         thinkNotificationTime,
         thinkNotificationDay,
       },
@@ -441,7 +458,7 @@ export default class App extends React.Component {
   setNextPushNotification(queuedStem) {
     PushNotification.cancelAllLocalNotifications();
     const { Settings } = this.state;
-    const { currHabit, numberOfStemsPerDay, queue, reflectNotificationTime, repeat } = Settings;
+    const { currHabit, numberOfStemsPerDay, queue, reflectNotificationTime, repeat, sound } = Settings;
     console.log('Queue in setNextPushNotification from state:', queue)
     if (!currHabit && !queuedStem) return;
     let newQueue = [];
@@ -762,7 +779,7 @@ export default class App extends React.Component {
       /* iOS and Android properties */
       title: title, // (optional)
       message: notification.stem, // (required)
-      playSound: true, // (optional) default: true
+      playSound: sound, // (optional) default: true
       soundName: 'default', // (optional) Sound to play when the notification is shown. Value of 'default' plays the default sound. It can be set to a custom sound such as 'android.resource://com.xyz/raw/my_sound'. It will look for the 'my_sound' audio file in 'res/raw' directory and play it. default: 'default' (default sound is played)
       // number: '10', // (optional) Valid 32 bit integer specified as string. default: none (Cannot be zero)
       repeatType: 'time', // (optional) Repeating interval. Check 'Repeating Notifications' section for more info.
@@ -962,6 +979,21 @@ export default class App extends React.Component {
         const QueueItem = Settings['queue'].filtered('id = $0', id);
         realm.delete(QueueItem);
         this.setNextPushNotification();
+      });
+    });
+  }
+
+  updateSettings(settings) {
+    const { Settings } = this.state;
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      realm.write(() => {
+        if (Settings['hideThoughts'] !== settings['hideThoughts']) Settings['hideThoughts'] = settings['hideThoughts'];
+        if (Settings['name'] !== settings['name']) Settings['name'] = settings['name'];
+        if (Settings['picture'] !== settings['picture']) Settings['picture'] = settings['picture'];
+        if (Settings['premium'] !== settings['premium']) Settings['premium'] = settings['premium'];
+        if (Settings['rated'] !== settings['rated']) Settings['rated'] = settings['rated'];
+        if (Settings['sound'] !== settings['sound']) Settings['sound'] = settings['sound'];
       });
     });
   }
