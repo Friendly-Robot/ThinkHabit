@@ -35,7 +35,8 @@ const HabitsNavigator = createStackNavigator({
           navigation={props.navigation}
           numberOfStemsPerDay={props.screenProps.Settings.numberOfStemsPerDay}
           passNavigationContext={props.screenProps.passNavigationContext}
-          queue={props.screenProps.queue}
+          queue={props.screenProps.Settings.queue}
+          removeFromQueue={props.screenProps.removeFromQueue}
           repeat={props.screenProps.Settings.repeat}
           reflectNotificationTime={props.screenProps.Settings.reflectNotificationTime}
           reflectNotificationDay={props.screenProps.Settings.reflectNotificationDay}
@@ -146,7 +147,6 @@ export default class App extends React.Component {
       appReady: false,
       appSet: false,
       navigation: null,
-      queue: [],
       Settings: {},
       Confidence: {},
       Meditation: {},
@@ -157,6 +157,7 @@ export default class App extends React.Component {
     }
     this.addToQueue = this.addToQueue.bind(this);
     this.passNavigationContext = this.passNavigationContext.bind(this);
+    this.removeFromQueue = this.removeFromQueue.bind(this);    
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
     this.updateStemInRealm = this.updateStemInRealm.bind(this);
@@ -208,7 +209,7 @@ export default class App extends React.Component {
     const {
       appReady,
       appSet,
-      queue,
+      // queue,
       Settings,
       Confidence,
       Meditation,
@@ -223,7 +224,6 @@ export default class App extends React.Component {
         screenProps={{
           appReady,
           appSet,
-          queue,
 
           Settings,
           Confidence,
@@ -235,6 +235,7 @@ export default class App extends React.Component {
 
           addToQueue: this.addToQueue,
           passNavigationContext: this.passNavigationContext,
+          removeFromQueue: this.removeFromQueue,
           toggleHabitProgress: this.toggleHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
           updateStemInRealm: this.updateStemInRealm,
@@ -284,7 +285,6 @@ export default class App extends React.Component {
           Settings.currDay = day;
         });
       }
-      const queue = Settings.queue.map((item) => JSON.parse(item));
       const Habits = realm.objects('Habit');
       let Confidence = {};
       let Meditation = {};
@@ -317,7 +317,7 @@ export default class App extends React.Component {
       this.setState({ 
         appReady: true,
         appSet: true,
-        queue,
+        // queue,
         Settings,
         Confidence,
         Meditation,
@@ -392,33 +392,6 @@ export default class App extends React.Component {
     });
   }
 
-  // registerNotificationActions() {
-  //   if (Platform.OS === 'android') {
-  //     PushNotification.registerNotificationActions(['Later', 'Think', 'Reflect']);
-  //     DeviceEventEmitter.addListener('notificationActionReceived', (action) => {
-  //       console.log ('Notification action received: ' + action);
-  //       const info = JSON.parse(action.dataJSON);
-  //       if (info.action == 'Later') {
-
-  //       } else if (info.action === 'Think') {
-  //         this.handleNotificationRoute(info.tag);
-  //       } else if (info.action === 'Reflect') {
-  
-  //       }
-  //       // Add all the required actions handlers
-  //     });
-  //   }
-  // }
-
-  // handleNotificationRoute(params) {
-  //   console.log('navigation', this.state.navigation)
-  //   const navigateAction = NavigationActions.navigate({
-  //     routeName: 'Stem',
-  //     params,
-  //   });
-  //   this.state.navigation.dispatch(navigateAction);
-  // }
-
   handleOpenedNotification(notification) {
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
@@ -444,11 +417,13 @@ export default class App extends React.Component {
 
   setNextPushNotification(queuedStem) {
     PushNotification.cancelAllLocalNotifications();
-    const { queue, Settings } = this.state;
-    const { currHabit, numberOfStemsPerDay, reflectNotificationTime, repeat } = Settings;
+    const { Settings } = this.state;
+    const { currHabit, numberOfStemsPerDay, queue, reflectNotificationTime, repeat } = Settings;
+    console.log('Queue in setNextPushNotification from state:', queue)
     if (!currHabit && !queuedStem) return;
+    let newQueue = [];
     let notification = {};
-    let queueRef = [...queue];
+    let queuedNotification = queue[0] || {};
     if (!queuedStem) {
       // Example Queue object:
       // {
@@ -458,42 +433,65 @@ export default class App extends React.Component {
       //   habit: 'string',
       //   reflection: 'bool',
       // }
-      if (queueRef.length === 0) {
-        // Populate queueRef with notifications
-        queueRef = this.addNewStemsToQueue(numberOfStemsPerDay, currHabit, this.state[currHabit]['completedStems']);
-        if (queueRef.length === 0) {
+      if (queue.length === 0) {
+        // Populate newQueue with notifications
+        newQueue = this.addNewStemsToQueue(numberOfStemsPerDay, currHabit, this.state[currHabit]['completedStems']);
+        if (newQueue.length === 0) {
           // TODO How to handle when user is finished with this think habit?
           // TODO Notify the user that they've finished this think habit
-          queueRef = this.resetNewStemsToQueue(numberOfStemsPerDay, currHabit);
+          newQueue = this.resetNewStemsToQueue(numberOfStemsPerDay, currHabit);
         }
-      }
-      const queuedNotification = queueRef.shift();
-      const multiply = reflectNotificationTime.length ? 2 : 1;
-      if (queuedNotification.notified + 1 !== repeat * multiply) { // * multiply to factor in reflections
-        queuedNotification.notified += 1;
-        queueRef.unshift(queuedNotification);
-        // ** Pay attention to whether a reflection is coming up for the most recent think habit
+        queuedNotification = newQueue[0];
+        Realm.open({schema: Schema, schemaVersion: 0})
+        .then(realm => {
+          realm.write(() => {
+            newQueue.map(item => {
+              const QueueItem = realm.create('QueueItem', item);
+              Settings['queue'].push(QueueItem);
+            });
+          });
+        });
       }
 
+      const multiply = reflectNotificationTime.length ? 2 : 1;
       notification = queuedNotification;
+      if (queuedNotification.notified + 1 <= repeat * multiply) { // * multiply to factor in reflections
+        Realm.open({schema: Schema, schemaVersion: 0})
+        .then(realm => {
+          realm.write(() => {
+            Settings['queue'][0]['notified'] += 1;
+          });
+        });
+        // ** Pay attention to whether a reflection is coming up for the most recent think habit
+      } else {
+        Realm.open({schema: Schema, schemaVersion: 0})
+        .then(realm => {
+          realm.write(() => {
+            const QueueItem = Settings['queue'][0];
+            realm.delete(QueueItem);
+          });
+        });
+      }
+
     } else {
       PushNotification.cancelAllLocalNotifications();
-      notification = {
+      queuedNotification = {
         notified: 1,
         id: queuedStem['id'],
         stem: queuedStem['stem'],
         habit: queuedStem['habit'],
       }
-      queueRef.unshift(notification);
-    }
-    const settingsQueue = queueRef.map((item) => JSON.stringify(item));
-    this.setState({ queue: queueRef });
-    Realm.open({schema: Schema, schemaVersion: 0})
-    .then(realm => {
-      realm.write(() => {
-        Settings['queue'] = settingsQueue;
+      notification = queuedNotification;
+      Realm.open({schema: Schema, schemaVersion: 0})
+      .then(realm => {
+        realm.write(() => {
+          const QueueItem = realm.create('QueueItem', queuedNotification);
+          Settings['queue'].unshift(QueueItem);
+        });
       });
-    });
+    }
+
+    console.log('Queue in setNextPushNotification after state:', queue)
     console.log('Notification QUEUE:', notification);
     console.log('Notification:', notification);
 
@@ -508,8 +506,9 @@ export default class App extends React.Component {
     let nextReflectNotificationTime;
     let millisecondsTillNextNotification = 0;
     const thinkTitles = ['Food for thought', currHabit, 'Complete this sentence', `Build a ${currHabit.toLowerCase()} mindset`];
-    const reflectTitles = ['Reflect on', 'How was your day?', 'Mark your improvements', `Reflect on ${currHabit.toLowerCase()}`];
+    const reflectTitles = ['Reflection', 'How was your day?', 'Mark your improvements', `Reflect on ${currHabit.toLowerCase()}`];
     let title;
+    let type;
 
     if (thinkNotificationTime.length && reflectNotificationTime.length) {
       // Find the next nearest hour in the same day
@@ -600,7 +599,7 @@ export default class App extends React.Component {
           const timeBetween = nextReflectNotificationTime - hourNow;
           millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
           title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
-          notification.reflection = true;   
+          type = 'reflection';   
           console.log('nextThinkNotificationTime > nextReflectNotificationTime')
         }
   
@@ -616,7 +615,7 @@ export default class App extends React.Component {
           const timeBetween = nextReflectNotificationTime - hourNow;
           millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
           title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
-          notification.reflection = true;   
+          type = 'reflection';   
           console.log('sameReflectDay')
         }
   
@@ -631,7 +630,7 @@ export default class App extends React.Component {
         } else {
           millisecondsTillNextNotification = millisecondsLeftInDay + (((7 - today) * millisecondsInDay) + (nextReflectDay * millisecondsInDay)) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
           title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
-          notification.reflection = true;   
+          type = 'reflection';   
           console.log('daySought === "least" && nextThinkDay > nextReflectDay')
         }
   
@@ -646,7 +645,7 @@ export default class App extends React.Component {
         } else if (nextThinkDay < nextReflectDay) {
           millisecondsTillNextNotification = millisecondsLeftInDay + ((nextThinkDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
           title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
-          notification.reflection = true;   
+          type = 'reflection';   
           console.log('daySought === "greater" && nextThinkDay < nextReflectDay')
         } else if (nextThinkDay === nextReflectDay) {
           if (nextThinkNotificationTime < nextReflectNotificationTime) {
@@ -656,13 +655,13 @@ export default class App extends React.Component {
           } else {
             millisecondsTillNextNotification = millisecondsLeftInDay + ((nextReflectDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
             title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
-            notification.reflection = true;   
+            type = 'reflection';   
             console.log('nextThinkDay === nextReflectDay && nextThinkNotificationTime > nextReflectNotificationTime')
           }
         } else if (nextThinkDay) {
           millisecondsTillNextNotification = millisecondsLeftInDay + ((nextThinkDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
           title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
-          notification.reflection = true;   
+          type = 'reflection';   
           console.log('daySought === "greater" && nextThinkDay')
         } else if (nextReflectDay) {
           millisecondsTillNextNotification = millisecondsLeftInDay + ((nextReflectDay - today) * millisecondsInDay) - ((millisecondsInDay) - (nextReflectNotificationTime * millisecondsInHour));
@@ -681,7 +680,8 @@ export default class App extends React.Component {
 
       millisecondsTillNextNotification = this.getTimeForSingleNotificationBatch(reflectNotificationTime, reflectNotificationDay, hourNow, today, millisecondsInDay, millisecondsInHour, millisecondsLeftInHour);
       title = reflectTitles[Math.floor(Math.random() * reflectTitles.length)];
-      notification.reflection = true;   
+      // notification.reflection = true;
+      type = 'reflection';   
       console.log('reflectNotificationTime.length')
 
     } else {
@@ -704,11 +704,13 @@ export default class App extends React.Component {
     // console.log('nextReflectDay', nextReflectDay)
     // console.log('daySought', daySought)
 
-
-
     const dateOfNotification = new Date(Date.now() + millisecondsTillNextNotification);
 
     console.log('date of notification', dateOfNotification)
+
+    if (type === 'reflect') {
+      notification['reflection'] = true;
+    }
 
     PushNotification.localNotificationSchedule({
       /* Android Only Properties */
@@ -929,7 +931,15 @@ export default class App extends React.Component {
     this.setNextPushNotification(stem);
   }
 
-  removeFromQueue() {
-
+  removeFromQueue(id) {
+    const { Settings } = this.state;
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      realm.write(() => {
+        const QueueItem = Settings['queue'].filtered('id = $0', id);
+        realm.delete(QueueItem);
+        this.setNextPushNotification();
+      });
+    });
   }
 }
