@@ -1,7 +1,10 @@
 import React from 'react';
 import {
   Image,
+  Linking,
+  Platform,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -12,14 +15,46 @@ import Aicon from 'react-native-vector-icons/FontAwesome';
 import { colors, fonts } from '../../config/styles';
 
 export default class Settings extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.updateSettings;
+    this.state = {
+      hideThoughts: props.hideThoughts,
+      name: props.name,
+      picture: props.picture,
+      premium: props.premium,
+      rated: props.rated,
+      sound: props.sound,
+    }
+    this.handleContribution = this.handleContribution.bind(this);
+    this.handleImageSelection = this.handleImageSelection.bind(this);
+    this.handleNameInput = this.handleNameInput.bind(this);
+    this.handleRating = this.handleRating.bind(this);
+    this.handleUpgrade = this.handleUpgrade.bind(this);
+    this.toggleHideThoughts = this.toggleHideThoughts.bind(this);
+    this.toggleSound = this.toggleSound.bind(this);
+  }
+
   render() {
-    const { 
-      image,
-      name,
+    const {
+      // hideThoughts,
+      // name,
       navigation,
-      premium, // TODO
-      rated, // TODO
+      // picture,
+      // premium,
+      // rated,
+      // updateSettings,
+      // sound,
     } = this.props;
+    
+    const { 
+      hideThoughts,
+      name,
+      picture,
+      premium,
+      rated,
+      sound,
+    } = this.state;
 
     return (
       <ScrollView 
@@ -29,37 +64,57 @@ export default class Settings extends React.PureComponent {
         <Header navigation={navigation} title={'Settings'} />
         <TouchableOpacity
           activeOpacity={.8}
-          onPress={() => {}}
+          onPress={this.handleImageSelection}
           style={styles.profileImage}
         >
           {
-            image ?
-            <Image source={{uri: image}} style={styles.image} />
+            picture ?
+            <Image source={{uri: picture}} style={styles.picture} />
             :
             <Aicon name={'user'} style={styles.user} />
           }
         </TouchableOpacity>
         <TextInput
           keyboardType={'default'}
-          // onChangeText={this.handleInput}
-          // ref={ref => this.input = ref}   
-          placeholder={name ? name : 'Your name'}
+          onChangeText={this.handleNameInput}
+          placeholder={'Your name'}
           placeholderTextColor={colors.darkGrey}
           returnKeyType='done'
           selectionColor={'#FF9900'}
           style={styles.input}
           underlineColorAndroid={'#FFFFFF'}
+          value={name}
         />
         <TouchableOpacity
           activeOpacity={.8}
-          onPress={() => {}}
+          onPress={this.handleContribution}
           style={[styles.setting, styles.firstSetting]}
         >
           <Text style={styles.settingText}>Contribute a think habit</Text>
         </TouchableOpacity>
+        <View style={styles.setting}>
+          <Text style={styles.settingText}>Hide thoughts while typing</Text>
+          <Switch
+            onTintColor={colors.primary}
+            onValueChange={this.toggleHideThoughts}
+            thumbTintColor={colors.grey}
+            tintColor={colors.darkGrey}
+            value={hideThoughts}
+          />
+        </View>
+        <View style={styles.setting}>
+          <Text style={styles.settingText}>Notification sound</Text>
+          <Switch
+            onTintColor={colors.primary}
+            onValueChange={this.toggleSound}
+            thumbTintColor={colors.grey}
+            tintColor={colors.darkGrey}
+            value={sound}
+          />
+        </View>
         <TouchableOpacity
           activeOpacity={.8}
-          onPress={() => {}}
+          onPress={this.handleRating}
           style={styles.setting}
         >
           <Text style={styles.settingText}>Give us a quick rating</Text>
@@ -81,7 +136,7 @@ export default class Settings extends React.PureComponent {
             </View>
             <TouchableOpacity
               activeOpacity={.8}
-              onPress={() => {}}
+              onPress={this.handleUpgrade}
               style={styles.upgradeButton}
             >
               <Text style={styles.upgradeText}>Upgrade</Text>
@@ -91,6 +146,66 @@ export default class Settings extends React.PureComponent {
       </ScrollView>
     )
   }
+
+  componentWillUnmount() {
+    if (this.updateSettings) {
+      this.props.updateSettings(this.state);
+    }
+  }
+
+  handleImageSelection() {
+    this.updateSettings = true;
+  }
+
+  handleNameInput(text) {
+    this.setState({ name: text });
+    if (!this.updateSettings) this.updateSettings = true;
+  }
+
+  handleContribution() {
+
+  }
+
+  toggleHideThoughts() {
+    const { hideThoughts } = this.state;
+    this.setState({ hideThoughts: !hideThoughts });
+    this.updateSettings = true;
+  }
+
+  toggleSound() {
+    const { sound } = this.state;
+    this.setState({ sound: !sound });
+    this.updateSettings = true;
+  }
+
+  handleRating() {
+    this.setState({ rated: true });
+    if (Platform.OS === 'ios') {
+      Linking.canOpenURL("itms-apps://itunes.apple.com/us/app/id${com.O2Balloons}?mt=8").then(supported => {
+        if (!supported) { 
+          // TODO Display a message
+          console.log('Can\'t open URL to App Store: ' + '');
+        } else {
+          return Linking.openURL("itms-apps://itunes.apple.com/us/app/id${com.O2Balloons}?mt=8");
+        }
+      }).catch(err => console.error('An error occurred opening App Store', err));
+    } else {
+      // TODO Make sure this works
+      Linking.canOpenURL("market://details?id=com.O2Balloons").then(supported => {
+        if (!supported) {
+          console.log('Can\'t open URL to Google Play: ' + '');
+        } else {
+          return Linking.openURL("market://details?id=com.O2Balloons");
+        }
+      }).catch(err => console.error('An error occurred opening Google Play', err));
+    }
+    this.updateSettings = true;
+  }
+
+  handleUpgrade() {
+    // TODO IAP
+    this.updateSettings = true;
+  }
 }
 
 import { ScaledSheet } from 'react-native-size-matters';
@@ -99,16 +214,11 @@ const styles = ScaledSheet.create({
   container: {
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    flex: 1,
+    flexGrow: 1,
   },
   firstSetting: {
     borderTopWidth: 1,
     marginTop: '25@vs',
-  },
-  image: {
-    borderRadius: 100,
-    height: '75@ms',
-    width: '75@ms',
   },
   input: {
     color: colors.darkGrey,
@@ -124,6 +234,11 @@ const styles = ScaledSheet.create({
   perky: {
     fontSize: fonts.medium,
     marginBottom: '5@vs',
+  },
+  picture: {
+    borderRadius: 100,
+    height: '75@ms',
+    width: '75@ms',
   },
   priceContainer: {
     alignSelf: 'stretch',
@@ -164,12 +279,12 @@ const styles = ScaledSheet.create({
     alignSelf: 'center',
     backgroundColor: colors.primary,
     borderRadius: '15@ms',
+    marginTop: '35@vs',
     paddingHorizontal: '15@ms',
     paddingVertical: '10@ms',
   },
   upgradeContainer: {
     alignSelf: 'stretch',
-    flex: 1,
     justifyContent: 'space-between',
     paddingVertical: '15@ms',
   },
