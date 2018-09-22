@@ -10,9 +10,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
 import Aicon from 'react-native-vector-icons/FontAwesome';
-import { colors, fonts } from '../../config/styles';
+import Communications from 'react-native-communications';
+import ImagePicker from 'react-native-image-picker';
 
 export default class Settings extends React.PureComponent {
   constructor(props) {
@@ -65,7 +67,7 @@ export default class Settings extends React.PureComponent {
         <TouchableOpacity
           activeOpacity={.8}
           onPress={this.handleImageSelection}
-          style={styles.profileImage}
+          style={[styles.profileImage, !picture && { borderWidth: 1, borderColor: colors.darkGrey } ]}
         >
           {
             picture ?
@@ -154,7 +156,35 @@ export default class Settings extends React.PureComponent {
   }
 
   handleImageSelection() {
-    this.updateSettings = true;
+    const options = {
+      title: 'Select Profile Image',
+    };
+
+    ImagePicker.showImagePicker(options, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.error) {
+        console.log('ImagePicker Error: ', response.error);
+      } else if (response.customButton) {
+        console.log('User tapped custom button: ', response.customButton);
+      }
+      else {
+        let uri;
+        if (Platform.OS === 'ios') {
+          uri = response.uri;
+        } else {
+          if (!response.path.includes('file://')) {
+            uri = `file://${response.path}`;
+          } else {
+            uri = response.path;
+          }
+        }
+        this.setState({
+          picture: uri
+        });
+        this.updateSettings = true;
+      }
+    });
   }
 
   handleNameInput(text) {
@@ -163,7 +193,7 @@ export default class Settings extends React.PureComponent {
   }
 
   handleContribution() {
-
+    Communications.email(['ThinkHabitIdeas@outlook.com'], [''], [''], 'New Think Habit', 'Hello. I have a think habit I want to share with everyone!');
   }
 
   toggleHideThoughts() {
@@ -248,9 +278,7 @@ const styles = ScaledSheet.create({
   profileImage: {
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderColor: colors.darkGrey,
     borderRadius: 100,
-    borderWidth: 1,
     height: '75@ms',
     justifyContent: 'center',
     marginTop: '35@vs',
