@@ -67,6 +67,7 @@ export default class Habits extends React.PureComponent {
       navigation,
       // numberOfStemsPerDay,
       queue,
+      removeFromQueue,
       // repeat,
       // reflectNotificationTime, 
       // reflectNotificationDay, 
@@ -678,6 +679,7 @@ export default class Habits extends React.PureComponent {
             habitSeq.map((habit) => (
               <Habit
                 addToQueue={addToQueue}
+                removeFromQueue={removeFromQueue}
                 completedStems={this.props[habit]['completedStems']}
                 data={data[habit]}
                 habit={habit}
@@ -1100,7 +1102,7 @@ class Habit extends React.PureComponent {
   }
 
   _renderItem({item}) {
-    const { addToQueue, completedStems, habit, navigateToStem, queue } = this.props;
+    const { addToQueue, completedStems, habit, navigateToStem, queue, removeFromQueue } = this.props;
     return (
       <StemCard
         addToQueue={addToQueue}
@@ -1108,6 +1110,7 @@ class Habit extends React.PureComponent {
         habit={habit}
         navigateToStem={navigateToStem}
         queue={queue}
+        removeFromQueue={removeFromQueue}
         stem={item}
       />
     )
@@ -1124,6 +1127,7 @@ class StemCard extends React.PureComponent {
     super(props);
     this.queueFuncs = {
       handleAddToQueue: () => this.handleAddToQueue(),
+      handleRemoveFromQueue: () => this.handleRemoveFromQueue(),
     }
     this.state = {
       realmStem: {},
@@ -1140,6 +1144,7 @@ class StemCard extends React.PureComponent {
       // habit,
       // navigateToStem,
       // queue,
+      // removeFromQueue,
       stem,
     } = this.props;
     const { inQueue, realmStem } = this.state;
@@ -1166,7 +1171,7 @@ class StemCard extends React.PureComponent {
               inQueue ?
               <TouchableOpacity
                 activeOpacity={.8}
-                onPress={() => {}}
+                onPress={this.queueFuncs['handleRemoveFromQueue']}
                 style={stemStyles.dotContainer}
               >
                 <View style={stemStyles.dot}/>
@@ -1228,14 +1233,25 @@ class StemCard extends React.PureComponent {
   }
 
   handleAddToQueue() {
-    const { addToQueue, stem } = this.props;
+    const { addToQueue, habit, stem } = this.props;
     const { realmStem } = this.state;
     if (Object.keys(this.state.realmStem).length) {
-      addToQueue(realmStem);
+      addToQueue({habit, ...realmStem});
     } else {
-      addToQueue(stem);
+      addToQueue({habit, ...stem});
     }
     this.setState({ inQueue: true });
+  }
+
+  handleRemoveFromQueue() {
+    const { removeFromQueue, stem } = this.props;
+    const { realmStem } = this.state;
+    if (Object.keys(this.state.realmStem).length) {
+      removeFromQueue(realmStem.id);
+    } else {
+      removeFromQueue(stem.id);
+    }
+    this.setState({ inQueue: false });
   }
 }
 
