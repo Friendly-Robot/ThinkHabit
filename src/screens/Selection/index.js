@@ -134,10 +134,11 @@ export default class Selection extends React.PureComponent {
         <TouchableOpacity
           activeOpacity={.8}
           onPress={this.handleStart}
-          style={[styles.startButton, !habitSelected && { backgroundColor: colors.grey }]}
         >
-          <Text style={styles.startText}>Start your Think Habit</Text>
-          { habitSelected.length > 0 && <Aicon name={'arrow-right'} style={styles.startArrow} /> }
+          <View style={[styles.startButton, !habitSelected && { opacity: .4 }]}>
+            <Text style={styles.startText}>Start your Think Habit</Text>
+            { habitSelected.length > 0 && <Aicon name={'arrow-right'} style={styles.startArrow} /> }
+          </View>
         </TouchableOpacity>
       </View>
     )
