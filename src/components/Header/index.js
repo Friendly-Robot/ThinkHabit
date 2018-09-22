@@ -11,6 +11,7 @@ export default class Header extends React.PureComponent {
   constructor() {
     super();
     this.handleBack = this.handleBack.bind(this);
+    this.handleHome = this.handleHome.bind(this);
     this.handleMenu = this.handleMenu.bind(this);
   }
   render() {
@@ -32,7 +33,14 @@ export default class Header extends React.PureComponent {
             <Eicon name={'chevron-left'} style={styles.caretIcon} /> 
           </TouchableOpacity>
         }
-        <Text style={[styles.title, backArrow && styles.backTitle]}>{ title ? title : 'Think Habit' }</Text>
+        <TouchableOpacity
+          activeOpacity={.8}
+          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+          onPress={this.handleHome}
+          style={[styles.titleContainer, backArrow && styles.backTitle]}
+        >
+          <Text style={styles.title}>{ title ? title : 'Think Habit' }</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={.8}
           hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
@@ -43,6 +51,10 @@ export default class Header extends React.PureComponent {
         </TouchableOpacity>
       </View>
     )
+  }
+
+  handleHome() {
+    this.props.navigation.navigate('Habits');
   }
 
   handleBack() {
@@ -90,6 +102,8 @@ const styles = ScaledSheet.create({
     color: colors.primary,
     fontSize: fonts.large,
     fontWeight: 'bold',
+  },
+  titleContainer: {
     left: '15@ms',
     position: 'absolute',
   },
