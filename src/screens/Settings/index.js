@@ -17,6 +17,8 @@ export default class Settings extends React.PureComponent {
       image,
       name,
       navigation,
+      premium, // TODO
+      rated, // TODO
     } = this.props;
 
     return (
@@ -61,26 +63,31 @@ export default class Settings extends React.PureComponent {
           style={styles.setting}
         >
           <Text style={styles.settingText}>Give us a quick rating</Text>
-          <Aicon name={'heart'} style={styles.settingIcon} />
+          <Aicon name={'heart'} style={[styles.settingIcon, rated && { color: '#A83F39' }]} />
         </TouchableOpacity>
-        <View style={styles.upgradeContainer}>
-          <View style={styles.perks}>
-            <View style={styles.priceContainer}>
-              <Text style={[styles.perky, { fontWeight: 'bold' }]}>Upgrade to premium version</Text>
-              <Text style={styles.perky}>$0.99</Text>
+        {
+          premium ?
+          <View/>
+          :
+          <View style={styles.upgradeContainer}>
+            <View style={styles.perks}>
+              <View style={styles.priceContainer}>
+                <Text style={[styles.perky, { fontWeight: 'bold' }]}>Upgrade to premium version</Text>
+                <Text style={styles.perky}>$0.99</Text>
+              </View>
+              <Text style={styles.perky}>Unlock favorites queue</Text>
+              <Text style={styles.perky}>Support developer</Text>
+              <Text style={styles.perky}>Remove ads</Text>
             </View>
-            <Text style={styles.perky}>Unlock favorites queue</Text>
-            <Text style={styles.perky}>Support development</Text>
-            <Text style={styles.perky}>Remove ads</Text>
+            <TouchableOpacity
+              activeOpacity={.8}
+              onPress={() => {}}
+              style={styles.upgradeButton}
+            >
+              <Text style={styles.upgradeText}>Upgrade</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            activeOpacity={.8}
-            onPress={() => {}}
-            style={styles.upgradeButton}
-          >
-            <Text style={styles.upgradeText}>Upgrade</Text>
-          </TouchableOpacity>
-        </View>
+        }
       </ScrollView>
     )
   }
