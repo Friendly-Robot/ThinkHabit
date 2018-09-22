@@ -15,6 +15,16 @@ import Header from '../../components/Header';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Communications from 'react-native-communications';
 import ImagePicker from 'react-native-image-picker';
+import * as RNIap from 'react-native-iap';
+
+const itemSkus = Platform.select({
+  ios: [
+    'com.ThinkHabit.premium'
+  ],
+  android: [
+    'com.ThinkHabit.premium'
+  ]
+});
 
 export default class Settings extends React.PureComponent {
   constructor(props) {
@@ -25,6 +35,7 @@ export default class Settings extends React.PureComponent {
       name: props.name,
       picture: props.picture,
       premium: props.premium,
+      products: null,
       rated: props.rated,
       sound: props.sound,
     }
@@ -149,7 +160,19 @@ export default class Settings extends React.PureComponent {
     )
   }
 
+  async componentDidMount() {
+    if (!this.props.premium) {
+      try {
+        const products = await RNIap.getProducts(itemSkus);
+        this.setState({ products });
+      } catch(err) {
+        console.warn(err); // standardized err.code and err.message available
+      }
+    }
+  }
+
   componentWillUnmount() {
+    if (this.state.products) RNIap.endConnection();
     if (this.updateSettings) {
       this.props.updateSettings(this.state);
     }
@@ -233,7 +256,14 @@ export default class Settings extends React.PureComponent {
   }
 
   handleUpgrade() {
-    // TODO IAP
+    // TODO Test on both platforms before release
+    RNIap.buyProduct('com.ThinkHabit.premium').then(purchase => {
+      console.log('Successfully purchased upgrade', purchase);
+      this.setState({ premium: true });
+      // TODO Thank the user!
+    }).catch(err => {
+      console.warn('Error making upgrade purchase:', err);
+    })
     this.updateSettings = true;
   }
 }

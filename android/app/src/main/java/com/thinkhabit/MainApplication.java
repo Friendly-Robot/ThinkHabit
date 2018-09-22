@@ -3,6 +3,7 @@ package com.thinkhabit;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import com.dooboolab.RNIap.RNIapPackage;
 import com.imagepicker.ImagePickerPackage;
 import com.wix.autogrowtextinput.AutoGrowTextInputPackage;
 import com.oblador.vectoricons.VectorIconsPackage;
@@ -29,6 +30,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new RNIapPackage(),
             new ImagePickerPackage(),
             new AutoGrowTextInputPackage(),
             new VectorIconsPackage(),
