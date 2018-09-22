@@ -12,39 +12,30 @@ import { colors, fonts } from '../../config/styles';
 
 
 export default class Navigator extends React.PureComponent {
-  constructor() {
-    super();
-    this.state ={
-      routes: {},
-    };
-  }
-
   render() {
     const {
       activeItemKey,
-      image,
       items,
       getLabel,
       name,
       navigation,
       onItemPress,
+      picture,
       renderIcon,
     } = this.props;
-
-    const { routes } = this.state;
 
     return (
       <View style={styles.flex}>
         <View style={styles.header}>
           <View style={styles.imageContainer}>
             {
-              image ?
-              <Image source={{uri: image}} style={styles.image} />
+              picture ?
+              <Image source={{uri: picture}} style={styles.picture} />
               :
               <Aicon name={'user'} style={styles.user} />
             }
           </View>
-          <Text style={styles.name}>{ name ? name : 'Setup your profile' }</Text>
+          <Text style={styles.name}>{ name ? name : picture ? '' :  'Setup your profile' }</Text>
         </View>
         <ScrollView contentContainerStyle={styles.flexGrow}>
           <SafeAreaView style={styles.flex} forceInset={{ top: 0, horizontal: 'never' }}>
@@ -108,11 +99,6 @@ const styles = ScaledSheet.create({
     justifyContent: 'space-between',
     padding: '15@ms',
   },
-  image: {
-    borderRadius: 100,
-    height: '75@ms',
-    width: '75@ms',
-  },
   imageContainer: {
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
@@ -126,6 +112,11 @@ const styles = ScaledSheet.create({
   name: {
     color: '#FFFFFF',
     fontSize: fonts.medium,
+  },
+  picture: {
+    borderRadius: 100,
+    height: '75@ms',
+    width: '75@ms',
   },
   user: {
     color: colors.darkGrey,
