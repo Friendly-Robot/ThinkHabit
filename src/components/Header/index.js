@@ -17,6 +17,7 @@ export default class Header extends React.PureComponent {
     const { 
       backArrow,
       // navigation,
+      title,
     } = this.props;
     return (
       <View style={styles.container}>
@@ -31,7 +32,7 @@ export default class Header extends React.PureComponent {
             <Eicon name={'chevron-left'} style={styles.caretIcon} /> 
           </TouchableOpacity>
         }
-        <Text style={[styles.title, backArrow && styles.backTitle]}>Think Habit</Text>
+        <Text style={[styles.title, backArrow && styles.backTitle]}>{ title ? title : 'Think Habit' }</Text>
         <TouchableOpacity
           activeOpacity={.8}
           hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
