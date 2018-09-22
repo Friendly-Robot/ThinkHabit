@@ -21,6 +21,8 @@
     "react": "^16.3.1",
     "react-native": "~0.55.2",
     "react-native-autogrow-textinput": "^5.1.1",
+    "react-native-communications": "^2.2.1",
+    "react-native-image-picker": "^0.26.10",
     "react-native-keyboard-aware-scroll-view": "^0.7.2",
     "react-native-material-kit": "^0.5.1",
     "react-native-push-notification": "^3.1.1",
