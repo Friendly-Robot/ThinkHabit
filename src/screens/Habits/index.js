@@ -680,7 +680,6 @@ export default class Habits extends React.PureComponent {
               <Habit
                 addToQueue={addToQueue}
                 removeFromQueue={removeFromQueue}
-                completedStems={this.props[habit]['completedStems']}
                 data={data[habit]}
                 habit={habit}
                 key={habit}
@@ -1080,7 +1079,6 @@ class Habit extends React.PureComponent {
   }
   render() {
     const {
-      // completedStems,
       data,
     } = this.props;
 
@@ -1102,11 +1100,10 @@ class Habit extends React.PureComponent {
   }
 
   _renderItem({item}) {
-    const { addToQueue, completedStems, habit, navigateToStem, queue, removeFromQueue } = this.props;
+    const { addToQueue, habit, navigateToStem, queue, removeFromQueue } = this.props;
     return (
       <StemCard
         addToQueue={addToQueue}
-        completed={completedStems.indexOf(item.id) >= 0 ? true : false}
         habit={habit}
         navigateToStem={navigateToStem}
         queue={queue}
@@ -1140,7 +1137,6 @@ class StemCard extends React.PureComponent {
   render() {
     const {
       // addToQueue,
-      completed,
       // habit,
       // navigateToStem,
       // queue,
@@ -1148,9 +1144,9 @@ class StemCard extends React.PureComponent {
       stem,
     } = this.props;
     const { inQueue, realmStem } = this.state;
-
-    const reflect = completed && (realmStem['reflections'] && realmStem['reflections'].length === 0);
-
+    
+    const reflect = Object.keys(realmStem).length && (realmStem['thoughts'].length && realmStem['reflections'].length === 0);
+    
     return (
       <View style={stemStyles.container}>
         <View style={stemStyles.stemContainer}>
@@ -1160,10 +1156,10 @@ class StemCard extends React.PureComponent {
         <View style={stemStyles.bottomContainer}>
           <View>
             <Text style={stemStyles.thoughts}>
-              { realmStem['thoughts'] ? `${realmStem['thoughts'].length} ${realmStem['thoughts'].length === 1 ? 'thought' : 'thoughts'}` : null }
+              { realmStem['thoughts'] && realmStem['thoughts'].length ? `${realmStem['thoughts'].length} ${realmStem['thoughts'].length === 1 ? 'thought' : 'thoughts'}` : null }
             </Text>
             <Text style={stemStyles.thoughts}>
-              { realmStem['reflections'] ? `${realmStem['reflections'].length} ${realmStem['reflections'].length === 1 ? 'reflection' : 'reflections'}` : null }
+              { realmStem['thoughts'] && (realmStem['thoughts'].length || realmStem['reflections'].length) ? `${realmStem['reflections'].length} ${realmStem['reflections'].length === 1 ? 'reflection' : 'reflections'}` : null }
             </Text>
           </View>
           <View style={stemStyles.buttons}>
@@ -1206,21 +1202,21 @@ class StemCard extends React.PureComponent {
   }
 
   updateRealmStem() {
-    const { completed, stem } = this.props;
-    if (completed) {
-      Realm.open({schema: Schema, schemaVersion: 0})
-      .then(realm => {
-        const Stem = realm.objectForPrimaryKey('Stem', stem['id']);
+    const { stem } = this.props;
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const Stem = realm.objectForPrimaryKey('Stem', stem['id']);
+      if (Stem) {
         this.setState({ realmStem: Stem });
-      });
-    }
+      }
+    });
   }
   
   handleThink() {
-    const { completed, habit, navigateToStem, stem } = this.props;
+    const { habit, navigateToStem, stem } = this.props;
     const { realmStem } = this.state;
     let params = {};
-    if (completed) {
+    if (Object.keys(realmStem).length) {
       if (realmStem['reflections'] && realmStem['reflections'].length === 0) {
         params = { reflection: true, ...realmStem, updateRealmStem: this.updateRealmStem };
       } else {
@@ -1246,7 +1242,7 @@ class StemCard extends React.PureComponent {
   handleRemoveFromQueue() {
     const { removeFromQueue, stem } = this.props;
     const { realmStem } = this.state;
-    if (Object.keys(this.state.realmStem).length) {
+    if (Object.keys(realmStem).length) {
       removeFromQueue(realmStem.id);
     } else {
       removeFromQueue(stem.id);
