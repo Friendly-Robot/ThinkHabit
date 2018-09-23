@@ -5,7 +5,9 @@ import {
   View,
 } from 'react-native';
 import { colors, fonts } from '../../config/styles';
+import Aicon from 'react-native-vector-icons/FontAwesome';
 import Eicon from 'react-native-vector-icons/Entypo';
+
 
 export default class Header extends React.PureComponent {
   constructor() {
@@ -44,6 +46,14 @@ export default class Header extends React.PureComponent {
         <TouchableOpacity
           activeOpacity={.8}
           hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+          onPress={() => {}}
+          style={styles.bookmark}
+        >
+          <Aicon name={'bookmark'} style={styles.bookmarkIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={.8}
+          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
           onPress={this.handleMenu}
           style={styles.menu}
         >
@@ -71,6 +81,14 @@ import { ScaledSheet } from 'react-native-size-matters';
 const styles = ScaledSheet.create({
   backTitle: {
     left: '45@ms',
+  },
+  bookmark: {
+    position: 'absolute',
+    right: '55@ms',
+  },
+  bookmarkIcon: {
+    color: colors.primary,
+    fontSize: fonts.medium,
   },
   caret: {
     left: '15@ms',
