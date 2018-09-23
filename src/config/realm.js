@@ -48,7 +48,6 @@ Settings.schema = {
     currHabit: 'string?',
     daysInRow: 'int',
     habitSeq: 'string[]',
-    hideThoughts: 'bool',
     joinDate: 'int',
     name: 'string?',
     numberOfStemsPerDay: 'int',

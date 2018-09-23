@@ -31,7 +31,6 @@ export default class Settings extends React.PureComponent {
     super(props);
     this.updateSettings;
     this.state = {
-      hideThoughts: props.hideThoughts,
       name: props.name,
       picture: props.picture,
       premium: props.premium,
@@ -44,13 +43,11 @@ export default class Settings extends React.PureComponent {
     this.handleNameInput = this.handleNameInput.bind(this);
     this.handleRating = this.handleRating.bind(this);
     this.handleUpgrade = this.handleUpgrade.bind(this);
-    this.toggleHideThoughts = this.toggleHideThoughts.bind(this);
     this.toggleSound = this.toggleSound.bind(this);
   }
 
   render() {
     const {
-      // hideThoughts,
       // name,
       navigation,
       // picture,
@@ -61,7 +58,6 @@ export default class Settings extends React.PureComponent {
     } = this.props;
     
     const { 
-      hideThoughts,
       name,
       picture,
       premium,
@@ -106,16 +102,6 @@ export default class Settings extends React.PureComponent {
           <Text style={styles.settingText}>Contribute a think habit</Text>
         </TouchableOpacity>
         <View style={styles.setting}>
-          <Text style={styles.settingText}>Hide thoughts while typing</Text>
-          <Switch
-            onTintColor={colors.primary}
-            onValueChange={this.toggleHideThoughts}
-            thumbTintColor={colors.grey}
-            tintColor={colors.darkGrey}
-            value={hideThoughts}
-          />
-        </View>
-        <View style={styles.setting}>
           <Text style={styles.settingText}>Notification sound</Text>
           <Switch
             onTintColor={colors.primary}
@@ -145,6 +131,7 @@ export default class Settings extends React.PureComponent {
               </View>
               <Text style={styles.perky}>Unlock favorites queue</Text>
               <Text style={styles.perky}>Support developer</Text>
+              <Text style={styles.perky}>Voice dictation</Text>
               <Text style={styles.perky}>Remove ads</Text>
             </View>
             <TouchableOpacity
@@ -217,12 +204,6 @@ export default class Settings extends React.PureComponent {
 
   handleContribution() {
     Communications.email(['ThinkHabitIdeas@outlook.com'], [''], [''], 'New Think Habit', 'Hello. I have a think habit I want to share with everyone!');
-  }
-
-  toggleHideThoughts() {
-    const { hideThoughts } = this.state;
-    this.setState({ hideThoughts: !hideThoughts });
-    this.updateSettings = true;
   }
 
   toggleSound() {

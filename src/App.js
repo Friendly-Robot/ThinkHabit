@@ -56,7 +56,6 @@ const HabitsNavigator = createStackNavigator({
     screen: function(props) {
       return (
         <Stem
-          hideThoughts={props.screenProps.Settings.hideThoughts}
           navigation={props.navigation}
           premium={props.screenProps.Settings.premium}
           updateStemInRealm={props.screenProps.updateStemInRealm}
@@ -84,7 +83,6 @@ const AppNavigator = createDrawerNavigator({
     screen: function(props) {
       return (
         <Settings 
-          hideThoughts={props.screenProps.Settings.hideThoughts}
           name={props.screenProps.Settings.name}
           navigation={props.navigation}
           picture={props.screenProps.Settings.picture}
@@ -386,7 +384,6 @@ export default class App extends React.Component {
           currHabit: '', 
           daysInRow: 0, 
           habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
-          hideThoughts: false,
           joinDate, 
           name: '', 
           numberOfStemsPerDay: 1, 
@@ -411,7 +408,6 @@ export default class App extends React.Component {
         currHabit: '',
         daysInRow: 0,
         habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
-        hideThoughts: false,
         joinDate,
         name: '',
         numberOfStemsPerDay: 1,
@@ -999,7 +995,6 @@ export default class App extends React.Component {
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       realm.write(() => {
-        if (Settings['hideThoughts'] !== settings['hideThoughts']) Settings['hideThoughts'] = settings['hideThoughts'];
         if (Settings['name'] !== settings['name']) Settings['name'] = settings['name'];
         if (Settings['picture'] !== settings['picture']) Settings['picture'] = settings['picture'];
         if (Settings['premium'] !== settings['premium']) Settings['premium'] = settings['premium'];
