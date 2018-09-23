@@ -144,8 +144,10 @@ const AppNavigator = createDrawerNavigator({
         return (
           <SplashScreen 
             appReady={props.screenProps.appReady} 
-            appSet={props.screenProps.appSet} 
+            appSet={props.screenProps.appSet}
+            checkOnNotificationAndRender={props.screenProps.checkOnNotificationAndRender} 
             navigation={props.navigation}
+            notification={props.screenProps.notification}
             passNavigationContext={props.screenProps.passNavigationContext}
           />
         )
@@ -174,10 +176,12 @@ const AppNavigator = createDrawerNavigator({
 export default class App extends React.Component {
   constructor() {
     super();
+    this.notificationAttempt = 0;
     this.state = {
       appReady: false,
       appSet: false,
       navigation: null,
+      notification: false,
       Settings: {},
       Confidence: {},
       Meditation: {},
@@ -187,6 +191,7 @@ export default class App extends React.Component {
       Freedom: {},
     }
     this.addToQueue = this.addToQueue.bind(this);
+    this.checkOnNotificationAndRender = this.checkOnNotificationAndRender.bind(this);
     this.passNavigationContext = this.passNavigationContext.bind(this);
     this.removeFromQueue = this.removeFromQueue.bind(this);    
     this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
@@ -204,10 +209,13 @@ export default class App extends React.Component {
       onNotification: (notification) => {
         console.log( 'ON NOTIFICATION:', notification );
 
-        setTimeout(() => this.handleOpenedNotification(notification.tag), 500);
+        this.onNotification = notification.tag;
+        this.checkOnNotificationAndRender();
+        this.setNextPushNotification();
+
+        this.setState({ notification: true });
 
         // ** How do we handle not sending the same unopened stem??
-        this.setNextPushNotification();
         
         // process the notification
         // required on iOS only (see fetchCompletionHandler docs: https://facebook.github.io/react-native/docs/pushnotificationios.html)
@@ -241,6 +249,7 @@ export default class App extends React.Component {
     const {
       appReady,
       appSet,
+      notification,
       // queue,
       Settings,
       Confidence,
@@ -256,6 +265,7 @@ export default class App extends React.Component {
         screenProps={{
           appReady,
           appSet,
+          notification,
 
           Settings,
           Confidence,
@@ -266,6 +276,7 @@ export default class App extends React.Component {
           Freedom,
 
           addToQueue: this.addToQueue,
+          checkOnNotificationAndRender: this.checkOnNotificationAndRender,
           passNavigationContext: this.passNavigationContext,
           removeFromQueue: this.removeFromQueue,
           toggleHabitProgress: this.toggleHabitProgress,
@@ -280,10 +291,6 @@ export default class App extends React.Component {
   componentDidMount() {
     this.initializeApp();
     setTimeout(() => this.setNextPushNotification(), 1000);
-  }
-
-  componentWillUnmount() { 
-    this.attemptNavigation = 0;
   }
 
   initializeApp() {
@@ -431,20 +438,42 @@ export default class App extends React.Component {
     });
   }
 
+  checkOnNotificationAndRender() {
+    if (this.onNotification && this.notificationAttempt < 4) {
+      if (this.state.navigation) {
+        this.handleOpenedNotification(this.onNotification);
+      } else {
+        setTimeout(() => {
+          this.notificationAttempt += 1;
+          this.checkOnNotificationAndRender();
+        }, 500);
+      }
+    }
+  }
+
   handleOpenedNotification(notification) {
+    if (!this.state.navigation) {
+      // Prevent navigation until context is passed.
+      this.checkOnNotificationAndRender();
+      return;
+    }
+    this.setState({ notification: true });
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       const Stem = realm.objectForPrimaryKey('Stem', notification['id']);
-      if (Stem['date']) {
-        notification['date'] = Stem['date'];
+      if (Stem && Stem['id']) {
+        notification['thinkDate'] = Stem['thinkDate'];
+        notification['reflectDate'] = Stem['reflectDate'];
         notification['thoughts'] = Stem['thoughts'];
         notification['reflections'] = Stem['reflections'];
+
         const navigateAction = NavigationActions.navigate({
           routeName: 'Stem',
           params: notification,
         });
         this.state.navigation.dispatch(navigateAction);
       } else {
+
         const navigateAction = NavigationActions.navigate({
           routeName: 'Stem',
           params: notification,
@@ -452,6 +481,13 @@ export default class App extends React.Component {
         this.state.navigation.dispatch(navigateAction);
       }
     });
+    this.notificationAttempt = 0;
+    this.onNotification = null;
+    setTimeout(() => {
+      // This is not necessary because state refreshes before next cold startup.
+      // Small cost for a worry-free "stuck in splash screen" state
+      this.setState({ notification: false });
+    }, 2000);
   }
 
   setNextPushNotification(queuedStem) {
@@ -969,6 +1005,7 @@ export default class App extends React.Component {
   }
 
   passNavigationContext(context) {
+    console.log('pass nav ctx')
     if (!this.state.navigation) {
       this.setState({ navigation: context });
     }

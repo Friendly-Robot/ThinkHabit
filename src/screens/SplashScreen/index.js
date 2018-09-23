@@ -15,14 +15,14 @@ export default class SplashScreen extends React.PureComponent {
     )
   }
 
-  componentDidMount() {
-    setTimeout(() => this.props.passNavigationContext(this.props.navigation), 0);
-  }
-
   componentWillReceiveProps(nextProps) {
     if (this.props.appReady !== nextProps.appReady) {
-      const appSet = nextProps.appSet;
-      setTimeout(() => {
+      nextProps.passNavigationContext(nextProps.navigation);
+      const { appSet } = nextProps;
+      this.navigationAction = setTimeout(() => {
+        // Prevent normal routing if app was opened from notification.
+        if (this.props.notification) return;
+
         if (appSet) {
           const resetAction = StackActions.reset({
             index: 0,
