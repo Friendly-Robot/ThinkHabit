@@ -79,9 +79,7 @@ export default class Stem extends React.PureComponent {
       value,
     } = this.state;
     
-    
     const { params } = this.props.navigation.state;
-    console.log('fav', favorite, 'par', params)
 
     return (
       <View style={styles.container}>
@@ -403,6 +401,7 @@ const styles = ScaledSheet.create({
     left: '15@ms',
   },
   bookmark: {
+    color: colors.grey,
     fontSize: fonts.medium,
   },
   bookmarkContainer: {
