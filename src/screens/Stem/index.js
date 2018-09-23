@@ -14,6 +14,7 @@ import Aicon from 'react-native-vector-icons/FontAwesome';
 import Micon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Swiper from 'react-native-swiper';
 import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
+import { verticalScale } from 'react-native-size-matters';
 import Voice from 'react-native-voice';
 
 
@@ -25,6 +26,8 @@ export default class Stem extends React.PureComponent {
     this.updatedThoughts;
     this.updatedReflections;
     this.updatedFavorite;
+    this.valueStore;
+    this.vs130 = verticalScale(130);
     Voice.onSpeechResults = this.onSpeechResults.bind(this);
     Voice.onSpeechPartialResults = this.onSpeechPartialResults.bind(this);
     this.state = {
@@ -70,7 +73,6 @@ export default class Stem extends React.PureComponent {
 
   render() {
     const {
-      hideThoughts,
       navigation,
       premium,
       // updateStemInRealm,
@@ -103,6 +105,7 @@ export default class Stem extends React.PureComponent {
           <Text style={styles.stem}>{ stem }</Text>
         </View>
         <View style={styles.dots}>
+          { keyboardShowing && <Text style={styles.yourThought}>Your thought</Text> }
           <TouchableOpacity
             activeOpacity={.8}
             hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
@@ -123,64 +126,59 @@ export default class Stem extends React.PureComponent {
           >
             <Aicon name={'bookmark'} style={[styles.bookmark, favorite && { color: colors.primary }]} />
           </TouchableOpacity>
+            { keyboardShowing && <Text style={styles.count}>{ index === 0 ? thoughtCount : reflectCount }</Text> }
         </View>
-        <Swiper
-          horizontal={true}
-          index={index}
-          loadMinimal={true}
-          loop={false}
-          onMomentumScrollEnd={this.handleSwiperUpdate}
-          ref={(ref) => this.swiper = ref}
-          showsPagination={false}
-        >
-          <ScrollView 
-            contentContainerStyle={styles.scrollview}
-            showsVerticalScrollIndicator={false}
-          >
-            {
-              (!hideThoughts || (hideThoughts && !keyboardShowing)) ?
-              <View style={styles.thoughts}>
-                <Text style={styles.thoughtTitle}>Thoughts</Text>
-                <Text style={styles.thoughtCount}>{ thoughts.length }</Text>
-                {
-                  thoughts.map((thought, idx) => {
-                    const key = this.thoughtMap[thought] > 1 ? idx : thought; 
-                    return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
-                  })
-                }
-                {
-                  thinkDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(thinkDate) }</Text>
-                }
-              </View>
-              :
-              <Text style={styles.count}>{ thoughtCount }</Text>
-            }
-          </ScrollView>
-          <ScrollView 
-            contentContainerStyle={styles.scrollview}
-            showsVerticalScrollIndicator={false}
-          >
-          {
-            (!hideThoughts || (hideThoughts && !keyboardShowing)) ?
-            <View style={styles.thoughts}>
-              <Text style={styles.thoughtTitle}>Reflections</Text>
-              <Text style={styles.thoughtCount}>{ reflections.length }</Text>
-              {
-                (!hideThoughts || (hideThoughts && !keyboardShowing)) && reflections.map((reflection, idx) => {
-                  const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
-                  return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
-                })
-              }
-              {
-                reflectDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(reflectDate) }</Text>
-              }
-            </View>
-            :
-            <Text style={styles.count}>{ reflectCount }</Text>
-          }
-        </ScrollView>
-        </Swiper>
-        <View style={styles.bottomView}>
+        {
+          !keyboardShowing && (
+            <Swiper
+              horizontal={true}
+              index={index}
+              loadMinimal={true}
+              loop={false}
+              onMomentumScrollEnd={this.handleSwiperUpdate}
+              ref={(ref) => this.swiper = ref}
+              showsPagination={false}
+            >
+              <ScrollView 
+                contentContainerStyle={styles.scrollview}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.thoughts}>
+                  <Text style={styles.thoughtTitle}>Thoughts</Text>
+                  <Text style={styles.thoughtCount}>{ thoughts.length }</Text>
+                  {
+                    thoughts.map((thought, idx) => {
+                      const key = this.thoughtMap[thought] > 1 ? idx : thought; 
+                      return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
+                    })
+                  }
+                  {
+                    thinkDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(thinkDate) }</Text>
+                  }
+                </View>
+              </ScrollView>
+              <ScrollView 
+                contentContainerStyle={styles.scrollview}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.thoughts}>
+                  <Text style={styles.thoughtTitle}>Reflections</Text>
+                  <Text style={styles.thoughtCount}>{ reflections.length }</Text>
+                  {
+                    reflections.map((reflection, idx) => {
+                      const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
+                      return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
+                    })
+                  }
+                  {
+                    reflectDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(reflectDate) }</Text>
+                  }
+                </View>
+              </ScrollView>
+            </Swiper>
+          )
+        }
+        <View style={[styles.bottomView, keyboardShowing ? { flex: 1 } : { height: this.vs130 }]}>
           <AutoGrowingTextInput
             keyboardType={'default'}
             onChangeText={this.handleInput}
@@ -273,18 +271,19 @@ export default class Stem extends React.PureComponent {
 
   _keyboardDidHide() {
     this.setState({ keyboardShowing: false })
+    this.input.blur();
   }
 
   handleAdd() {
     if (this.preventAdd) return;
-    this.setState({ adding: true });
     setTimeout(() => {
-      this.setState({ adding: false });
+      if (this.state.adding) this.setState({ adding: false });
     }, 750);
     this.preventAdd = true;
     setTimeout(() => this.preventAdd = false, 500);
     const { index, reflectCount, thoughtCount, value } = this.state;
     if (value) {
+      this.setState({ adding: true, keyboardShowing: false });
       if (index === 0) {
         if (this.thoughtMap[value]) {
           this.thoughtMap[value] += 1;
@@ -306,6 +305,7 @@ export default class Stem extends React.PureComponent {
         this.setState({ reflections: res, value: '', reflectCount: reflectCount + 1 });
         this.updatedReflections = true;
       }
+      if (this.valueStore) this.valueStore = '';
     } else {
       if (this.state.keyboardShowing) {
         this.input.blur();
@@ -353,11 +353,28 @@ export default class Stem extends React.PureComponent {
   }
 
   onSpeechPartialResults(e) {
-    this.setState({ value: e.value[0] });
+    let value = '';
+    if (this.valueStore) {
+      value = `${this.valueStore} ${e.value}`;
+    } else {
+      value = e.value[0];
+    }
+    this.setState({ value });
   }
 
   onSpeechResults(e) {
-    this.setState({ value: `${e.value[0][0].toUpperCase()}${e.value[0].substr(1)}.`, recording: false });
+    let value = '';
+    if (this.valueStore) {
+      if (e.value[0].length) {
+        value = `${this.valueStore} ${e.value[0][0].toUpperCase()}${e.value[0].substr(1)}.`;
+      } else {
+        value = this.valueStore;
+      }
+    } else {
+      value = `${e.value[0][0].toUpperCase()}${e.value[0].substr(1)}.`
+    }
+    this.setState({ value, recording: false });
+    this.valueStore = value;
   }
 
   async _startRecognizing(e) {
@@ -368,10 +385,13 @@ export default class Stem extends React.PureComponent {
     // }
     try {
       await Voice.start('en-US');
-      this.setState({ recording: true });
+      if (this.state.value) {
+        this.valueStore = this.state.value;
+      }
+      this.setState({ recording: true, keyboardShowing: true });
       setTimeout(() => {
         if (!this.state.value) {
-          this.setState({ recording: false });
+          this.setState({ recording: false, keyboardShowing: false });
         }
       }, 5000);
     } catch (e) {
@@ -484,7 +504,6 @@ const styles = ScaledSheet.create({
   },
   bottomView: {
     backgroundColor: '#FFFFFF',
-    height: '130@vs',
     justifyContent: 'space-between',
     paddingBottom: '60@ms',
     zIndex: 10,
@@ -512,11 +531,10 @@ const styles = ScaledSheet.create({
     flex: 1,
   },
   count: {
-    alignSelf: 'center',
     color: colors.secondary,
-    fontSize: fonts.medium,
+    fontSize: fonts.small,
     position: 'absolute',
-    right: '20@ms',
+    right: '45@ms',
   },
   date: {
     color: colors.darkGrey,
@@ -614,6 +632,12 @@ const styles = ScaledSheet.create({
     backgroundColor: colors.grey,
     bottom: '15@vs',
     left: '15@ms',
+    position: 'absolute',
+  },
+  yourThought: {
+    color: colors.primary,
+    fontSize: fonts.small,
+    left: '25@ms',
     position: 'absolute',
   },
 });
