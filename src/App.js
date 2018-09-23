@@ -102,7 +102,7 @@ const AppNavigator = createDrawerNavigator({
   'About': {
     screen: function(props) {
       return (
-        <About/>
+        <About navigation={props.navigation} />
       )
     },
     navigationOptions: {
@@ -949,12 +949,20 @@ export default class App extends React.Component {
       if (type === 'new') {
         realm.write(() => {
           realm.create('Stem', object);
-          const Habit = realm.objectForPrimaryKey('Habit', object['habit']);
-          Habit['completedStems'].unshift(id);
+          if (object['thoughts'].length || object['reflections'].length) {
+            const Habit = realm.objectForPrimaryKey('Habit', object['habit']);
+            Habit['completedStems'].unshift(id);
+          }
         });
       } else if (Stem['id']) {
         realm.write(() => {
-          Stem['date'] = object['date'];
+          if (object['thoughts'].length > 0 && Stem['thoughts'].length === 0) {
+            const Habit = realm.objectForPrimaryKey('Habit', Stem['habit']);
+            Habit['completedStems'].unshift(id);
+          }
+          if (object['favorite'] !== Stem['favorite']) Stem['favorite'] = object['favorite'];
+          if (object['thinkDate']) Stem['thinkDate'] = object['thinkDate'];
+          if (object['reflectDate']) Stem['reflectDate'] = object['reflectDate'];
           if (object['thoughts']) Stem['thoughts'] = object['thoughts'];
           if (object['reflections']) Stem['reflections'] = object['reflections'];
         });
