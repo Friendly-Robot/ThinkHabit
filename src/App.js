@@ -37,6 +37,7 @@ const HabitsNavigator = createStackNavigator({
           Freedom={props.screenProps.Freedom}
           currHabit={props.screenProps.Settings.currHabit}
           habitSeq={props.screenProps.Settings.habitSeq}
+          hideThoughts={props.screenProps.Settings.hideThoughts}
           navigation={props.navigation}
           numberOfStemsPerDay={props.screenProps.Settings.numberOfStemsPerDay}
           passNavigationContext={props.screenProps.passNavigationContext}

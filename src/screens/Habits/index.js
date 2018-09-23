@@ -64,6 +64,7 @@ export default class Habits extends React.PureComponent {
       // Freedom,
       // currHabit,
       habitSeq,
+      hideThoughts,
       navigation,
       // numberOfStemsPerDay,
       queue,
@@ -682,6 +683,7 @@ export default class Habits extends React.PureComponent {
                 removeFromQueue={removeFromQueue}
                 data={data[habit]}
                 habit={habit}
+                hideThoughts={hideThoughts}
                 key={habit}
                 navigateToStem={this.navigateToStem}
                 queue={queue}
@@ -1080,6 +1082,7 @@ class Habit extends React.PureComponent {
   render() {
     const {
       data,
+      // hideThoughts,
     } = this.props;
 
     return (
@@ -1100,11 +1103,12 @@ class Habit extends React.PureComponent {
   }
 
   _renderItem({item}) {
-    const { addToQueue, habit, navigateToStem, queue, removeFromQueue } = this.props;
+    const { addToQueue, habit, hideThoughts, navigateToStem, queue, removeFromQueue } = this.props;
     return (
       <StemCard
         addToQueue={addToQueue}
         habit={habit}
+        hideThoughts={hideThoughts}
         navigateToStem={navigateToStem}
         queue={queue}
         removeFromQueue={removeFromQueue}
@@ -1140,6 +1144,7 @@ class StemCard extends React.PureComponent {
     const {
       // addToQueue,
       // habit,
+      // hideThoughts,
       // navigateToStem,
       // queue,
       // removeFromQueue,
@@ -1262,17 +1267,17 @@ class StemCard extends React.PureComponent {
   }
   
   handleThink() {
-    const { habit, navigateToStem, stem } = this.props;
+    const { habit, hideThoughts, navigateToStem, stem } = this.props;
     const { realmStem } = this.state;
     let params = {};
     if (Object.keys(realmStem).length) {
       if (realmStem['thoughts'].length && realmStem['reflections'].length === 0) {
-        params = { reflection: true, ...realmStem, updateRealmStem: this.updateRealmStem };
+        params = { reflection: true, ...realmStem, updateRealmStem: this.updateRealmStem, hideThoughts };
       } else {
-        params = { ...realmStem, updateRealmStem: this.updateRealmStem };
+        params = { ...realmStem, updateRealmStem: this.updateRealmStem, hideThoughts };
       }
     } else {
-      params = { habit, ...stem, updateRealmStem: this.updateRealmStem };
+      params = { habit, ...stem, updateRealmStem: this.updateRealmStem, hideThoughts };
     }
     navigateToStem(params);
   }
