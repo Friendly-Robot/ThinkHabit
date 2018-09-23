@@ -27,7 +27,7 @@ export default class Stem extends React.PureComponent {
     this.updatedReflections;
     this.updatedFavorite;
     this.valueStore;
-    this.vs130 = verticalScale(130);
+    this.vs130 = verticalScale(60);
     Voice.onSpeechResults = this.onSpeechResults.bind(this);
     Voice.onSpeechPartialResults = this.onSpeechPartialResults.bind(this);
     this.state = {
@@ -178,20 +178,21 @@ export default class Stem extends React.PureComponent {
             </Swiper>
           )
         }
-        <View style={[styles.bottomView, keyboardShowing ? { flex: 1 } : { height: this.vs130 }]}>
+        <View style={[styles.bottomView, keyboardShowing ? { flex: 1 } : { height: this.vs60 }]}>
+
           <AutoGrowingTextInput
             keyboardType={'default'}
             onChangeText={this.handleInput}
-            maxHeight={200}
             minHeight={45}
-            ref={ref => this.input = ref}            
+            ref={ref => this.input = ref}
             returnKeyType='done'
             scrollEnabled={true}
             selectionColor={'#FF9900'}
-            style={[styles.input, Platform.OS === 'ios' && styles.iosInput]}
-            underlineColorAndroid={colors.primary}
+            style={[styles.input, Platform.OS === 'ios' && keyboardShowing && styles.iosInput]}
+            underlineColorAndroid={[keyboardShowing ? colors.primary : '#FFFFFF']}
             value={value}
           />
+
           <TouchableOpacity
             activeOpacity={.8}
             onPress={() => this._startRecognizing()}
@@ -283,7 +284,7 @@ export default class Stem extends React.PureComponent {
     setTimeout(() => this.preventAdd = false, 500);
     const { index, reflectCount, thoughtCount, value } = this.state;
     if (value) {
-      this.setState({ adding: true, keyboardShowing: false });
+      this.setState({ adding: true });
       if (index === 0) {
         if (this.thoughtMap[value]) {
           this.thoughtMap[value] += 1;
@@ -503,9 +504,8 @@ const styles = ScaledSheet.create({
     right: '20@ms',
   },
   bottomView: {
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'space-between',
-    paddingBottom: '60@ms',
+    backgroundColor: 'transparent',
+    paddingBottom: '20@ms',
     zIndex: 10,
   },
   button: {
