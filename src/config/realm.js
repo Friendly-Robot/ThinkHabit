@@ -29,10 +29,12 @@ Stem.schema = {
   primaryKey: 'id',
   properties: {
     id: 'string',
-    date: 'int',
+    favorite: 'bool',
     habit: 'string',
     stem: 'string',
+    thinkDate: 'int',
     thoughts: 'string[]',
+    reflectDate: 'int',
     reflections: 'string[]',
   }
 };
