@@ -956,7 +956,7 @@ export default class App extends React.Component {
         });
       } else if (Stem['id']) {
         realm.write(() => {
-          if (object['thoughts'].length > 0 && Stem['thoughts'].length === 0) {
+          if ((object['thoughts'] && object['thoughts'].length) && Stem['thoughts'].length === 0) {
             const Habit = realm.objectForPrimaryKey('Habit', Stem['habit']);
             Habit['completedStems'].unshift(id);
           }
