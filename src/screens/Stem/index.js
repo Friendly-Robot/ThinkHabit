@@ -18,12 +18,15 @@ import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
 export default class Stem extends React.PureComponent {
   constructor(props) {
     super(props);
+    this.saved;
     this.reflectionMap = {};
     this.thoughtMap = {};
     this.updatedThoughts;
     this.updatedReflections;
+    this.updatedFavorite;
     this.state = {
       dotFuncs: {},
+      favorite: props.navigation.state.params && typeof props.navigation.state.params.favorite === 'boolean' ? props.navigation.state.params.favorite : false,
       keyboardShowing: false,
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
@@ -50,6 +53,7 @@ export default class Stem extends React.PureComponent {
       });
     }
     this.handleAdd = this.handleAdd.bind(this);
+    this.handleFavorite = this.handleFavorite.bind(this);
     this.handleInput = this.handleInput.bind(this);
     this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
     this._keyboardDidHide = this._keyboardDidHide.bind(this);
@@ -66,6 +70,7 @@ export default class Stem extends React.PureComponent {
 
     const {
       dotFuncs,
+      favorite,
       keyboardShowing,
       index,
       reflections,
@@ -73,9 +78,10 @@ export default class Stem extends React.PureComponent {
       saving,
       value,
     } = this.state;
-
+    
+    
     const { params } = this.props.navigation.state;
-    console.log('date', params, params['date'], this.getPrettyDate(params['date']))
+    console.log('fav', favorite, 'par', params)
 
     return (
       <View style={styles.container}>
@@ -96,6 +102,14 @@ export default class Stem extends React.PureComponent {
             onPress={dotFuncs[1]}
             style={[styles.dot, index === 1 && styles.activeDot]}
           />
+          <TouchableOpacity
+            activeOpacity={.8}
+            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            onPress={this.handleFavorite}
+            style={styles.bookmarkContainer}
+          >
+            <Aicon name={'bookmark'} style={[styles.bookmark, favorite && { color: colors.primary }]} />
+          </TouchableOpacity>
         </View>
         <Swiper
           horizontal={true}
@@ -120,7 +134,7 @@ export default class Stem extends React.PureComponent {
                 })
               }
               {
-                params && params['date'] && <Text style={styles.date}>{ this.getPrettyDate(params['date']) }</Text>
+                params && params['thinkDate'] > 1 && <Text style={styles.date}>{ this.getPrettyDate(params['thinkDate']) }</Text>
               }
             </View>
           </ScrollView>
@@ -138,7 +152,7 @@ export default class Stem extends React.PureComponent {
               })
             }
             {
-              params && params['date'] && <Text style={styles.date}>{ this.getPrettyDate(params['date']) }</Text>
+              params && params['reflectDate'] > 1 && <Text style={styles.date}>{ this.getPrettyDate(params['reflectDate']) }</Text>
             }
           </View>
         </ScrollView>
@@ -200,6 +214,9 @@ export default class Stem extends React.PureComponent {
   }
 
   componentWillUnmount() {
+    if (!this.saved && this.updatedFavorite) {
+      this.updateStem();
+    }
     this.mounted = false;
     if (Platform.OS === 'ios') {
       this.keyboardWillShowListener.remove();
@@ -279,6 +296,12 @@ export default class Stem extends React.PureComponent {
     }
   }
 
+  handleFavorite() {
+    const { favorite } = this.state;
+    this.setState({ favorite: !favorite });
+    this.updatedFavorite = true;
+  }
+
   handleSwiperUpdate() {
     this.setState({ index: this.swiper.state.index });
   }
@@ -293,11 +316,11 @@ export default class Stem extends React.PureComponent {
       this.setState({ keyboardShowing: false });
       Keyboard.dismiss();
     }
-    const { index, value } = this.state;
+    const { favorite, index, value } = this.state;
     const { thoughts, reflections } = this.state;
     let updatedThoughts = [];
     let updatedReflections = [];
-    if ((!this.updatedThoughts && !this.updatedReflections) && !value) {
+    if ((!this.updatedThoughts && !this.updatedReflections) && !value && !this.updatedFavorite) {
       return;
     } else if ((!this.updatedThoughts || !this.updatedReflections) && value) {
       if (index === 0) {
@@ -327,34 +350,44 @@ export default class Stem extends React.PureComponent {
     setTimeout(() => {
       this.updatedReflections = false;
       this.updatedThoughts = false;
+      this.updatedFavorite = false;
       this.mounted && this.setState({ saving: false });
     }, 1500);
     const { updateStemInRealm } = this.props;
     const { params } = this.props.navigation.state;
     const date = new Date().getTime();
-    if (params['date']) {
+    if (typeof params['favorite'] === 'boolean') {
       const updatedStem = {};
-      updatedStem['date'] = date;
+      if (this.updatedThoughts && this.updatedReflections) {
+        updatedStem['thinkDate'] = date;
+        updatedStem['reflectDate'] = date;
+      } else if (this.updatedThoughts) {
+        updatedStem['thinkDate'] = date;
+      } else if (this.updatedReflections) {
+        updatedStem['reflectDate'] = date;
+      }
+      updatedStem['favorite'] = favorite;
       if (this.updatedThoughts) updatedStem['thoughts'] = updatedThoughts;
       if (this.updatedReflections) updatedStem['reflections'] = updatedReflections;
       updateStemInRealm(params['id'], updatedStem, 'update');
     } else {
       const newStem = {
         id: params['id'],
-        date,
+        favorite,
         habit: params['habit'],
         stem: params['stem'],
+        thinkDate: this.updatedThoughts ? date : 0,
         thoughts: updatedThoughts,
+        reflectDate: this.updatedReflections ? date : 0,
         reflections: updatedReflections,
       };
       updateStemInRealm(params['id'], newStem, 'new');
     }
     this.setState({ value: '' });
     setTimeout(() => {
-      if (this.mounted) {
-        this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
-      }
-    }, 1500);
+      this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
+    }, 1000);
+    this.saved = true;
   }
 }
 
@@ -368,6 +401,13 @@ const styles = ScaledSheet.create({
     backgroundColor: colors.primary,
     bottom: '15@vs',
     left: '15@ms',
+  },
+  bookmark: {
+    fontSize: fonts.medium,
+  },
+  bookmarkContainer: {
+    position: 'absolute',
+    right: '20@ms',
   },
   bottomView: {
     backgroundColor: '#FFFFFF',
