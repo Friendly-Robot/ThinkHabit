@@ -1238,23 +1238,25 @@ class StemCard extends React.PureComponent {
     .then(realm => {
       realm.write(() => {
         stem['favorite'] = favorite;
+        this.setState({ realmStem: { ...this.state.realmStem, favorite } });
       });
     });
   }
 
   createNewStemInRealm(stem, favorite, habit) {
+    const newStem = {
+      id: stem['id'],
+      favorite,
+      habit,
+      stem: stem['stem'],
+      thinkDate: 0,
+      thoughts: [],
+      reflectDate: 0,
+      reflections: [],
+    };
+    this.setState({ realmStem: newStem });
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
-      const newStem = {
-        id: stem['id'],
-        favorite,
-        habit,
-        stem: stem['stem'],
-        thinkDate: 0,
-        thoughts: [],
-        reflectDate: 0,
-        reflections: [],
-      };
       realm.write(() => {
         realm.create('Stem', newStem);
       });
