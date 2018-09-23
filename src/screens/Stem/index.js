@@ -18,7 +18,6 @@ import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
 export default class Stem extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.saved;
     this.reflectionMap = {};
     this.thoughtMap = {};
     this.updatedThoughts;
@@ -29,9 +28,10 @@ export default class Stem extends React.PureComponent {
       favorite: props.navigation.state.params && typeof props.navigation.state.params.favorite === 'boolean' ? props.navigation.state.params.favorite : false,
       keyboardShowing: false,
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
+      reflectCount: 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
+      thoughtCount: 0,
       thoughts: props.navigation.state.params && props.navigation.state.params.thoughts ? props.navigation.state.params.thoughts : [],
-      saving: false,
       value: '',
     }
     if (this.state.thoughts.length) {
@@ -71,21 +71,28 @@ export default class Stem extends React.PureComponent {
     const {
       dotFuncs,
       favorite,
-      keyboardShowing,
       index,
+      keyboardShowing,
+      reflectCount,
       reflections,
+      thoughtCount,
       thoughts,
-      saving,
       value,
     } = this.state;
     
-    const { params } = this.props.navigation.state;
+    // const { params } = this.props.navigation.state;
+    const { 
+      hideThoughts,
+      thinkDate,
+      reflectDate,
+      stem,
+    } = this.props.navigation.state.params;
 
     return (
       <View style={styles.container}>
         <Header backArrow={true} navigation={navigation} />
         <View style={styles.stemContainer}>
-          <Text style={styles.stem}>{ params['stem'] }</Text>
+          <Text style={styles.stem}>{ stem }</Text>
         </View>
         <View style={styles.dots}>
           <TouchableOpacity
@@ -122,37 +129,47 @@ export default class Stem extends React.PureComponent {
             contentContainerStyle={styles.scrollview}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.thoughts}>
-              <Text style={styles.thoughtTitle}>Thoughts</Text>
-              <Text style={styles.thoughtCount}>{ thoughts.length }</Text>
-              {
-                thoughts.map((thought, idx) => {
-                  const key = this.thoughtMap[thought] > 1 ? idx : thought; 
-                  return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
-                })
-              }
-              {
-                params && params['thinkDate'] > 1 && <Text style={styles.date}>{ this.getPrettyDate(params['thinkDate']) }</Text>
-              }
-            </View>
+            {
+              (!hideThoughts || (hideThoughts && !keyboardShowing)) ?
+              <View style={styles.thoughts}>
+                <Text style={styles.thoughtTitle}>Thoughts</Text>
+                <Text style={styles.thoughtCount}>{ thoughts.length }</Text>
+                {
+                  thoughts.map((thought, idx) => {
+                    const key = this.thoughtMap[thought] > 1 ? idx : thought; 
+                    return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
+                  })
+                }
+                {
+                  thinkDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(thinkDate) }</Text>
+                }
+              </View>
+              :
+              <Text style={styles.count}>{ thoughtCount }</Text>
+            }
           </ScrollView>
           <ScrollView 
             contentContainerStyle={styles.scrollview}
             showsVerticalScrollIndicator={false}
           >
-          <View style={styles.thoughts}>
-            <Text style={styles.thoughtTitle}>Reflections</Text>
-            <Text style={styles.thoughtCount}>{ reflections.length }</Text>
-            {
-              reflections.map((reflection, idx) => {
-                const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
-                return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
-              })
-            }
-            {
-              params && params['reflectDate'] > 1 && <Text style={styles.date}>{ this.getPrettyDate(params['reflectDate']) }</Text>
-            }
-          </View>
+          {
+            (!hideThoughts || (hideThoughts && !keyboardShowing)) ?
+            <View style={styles.thoughts}>
+              <Text style={styles.thoughtTitle}>Reflections</Text>
+              <Text style={styles.thoughtCount}>{ reflections.length }</Text>
+              {
+                (!hideThoughts || (hideThoughts && !keyboardShowing)) && reflections.map((reflection, idx) => {
+                  const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
+                  return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
+                })
+              }
+              {
+                reflectDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(reflectDate) }</Text>
+              }
+            </View>
+            :
+            <Text style={styles.count}>{ reflectCount }</Text>
+          }
         </ScrollView>
         </Swiper>
         <View style={styles.bottomView}>
@@ -176,20 +193,6 @@ export default class Stem extends React.PureComponent {
           >
             <Aicon name={'plus'} style={styles.buttonIcon} />
           </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={.8}
-            onPress={this.updateStem}
-            style={styles.checkContainer}
-          >
-            <View style={[styles.button, styles.checkButton, { opacity: this.updatedThoughts || this.updatedReflections ? 1 : 0 }]}>
-              {
-                saving ?
-                <ActivityIndicator size={'small'} color={'#FFFFFF'} />
-                :
-                <Aicon name={'check'} style={styles.buttonIcon} />
-              }
-            </View>
-          </TouchableOpacity>
         </View>
         { Platform.OS === 'ios' && keyboardShowing && <View style={{ height: this.keyboardHeight }} /> }
       </View>
@@ -212,7 +215,7 @@ export default class Stem extends React.PureComponent {
   }
 
   componentWillUnmount() {
-    if (!this.saved && this.updatedFavorite) {
+    if (this.updatedFavorite || this.updatedThoughts || this.updatedReflections) {
       this.updateStem();
     }
     this.mounted = false;
@@ -243,7 +246,7 @@ export default class Stem extends React.PureComponent {
     if (this.preventAdd) return;
     this.preventAdd = true;
     setTimeout(() => this.preventAdd = false, 500);
-    const { index, value } = this.state;
+    const { index, reflectCount, thoughtCount, value } = this.state;
     if (value) {
       if (index === 0) {
         if (this.thoughtMap[value]) {
@@ -253,7 +256,7 @@ export default class Stem extends React.PureComponent {
         }
         const { thoughts } = this.state;
         const res = [value, ...thoughts];
-        this.setState({ thoughts: res, value: '' });
+        this.setState({ thoughts: res, value: '', thoughtCount: thoughtCount + 1 });
         this.updatedThoughts = true;
       } else {
         if (this.reflectionMap[value]) {
@@ -263,7 +266,7 @@ export default class Stem extends React.PureComponent {
         }
         const { reflections } = this.state;
         const res = [value, ...reflections];
-        this.setState({ reflections: res, value: '' });
+        this.setState({ reflections: res, value: '', reflectCount: reflectCount + 1 });
         this.updatedReflections = true;
       }
     } else {
@@ -344,13 +347,6 @@ export default class Stem extends React.PureComponent {
       updatedThoughts = [...thoughts];
       updatedReflections = [...reflections];
     }
-    this.setState({ saving: true });
-    setTimeout(() => {
-      this.updatedReflections = false;
-      this.updatedThoughts = false;
-      this.updatedFavorite = false;
-      this.mounted && this.setState({ saving: false });
-    }, 1500);
     const { updateStemInRealm } = this.props;
     const { params } = this.props.navigation.state;
     const date = new Date().getTime();
@@ -381,11 +377,12 @@ export default class Stem extends React.PureComponent {
       };
       updateStemInRealm(params['id'], newStem, 'new');
     }
-    this.setState({ value: '' });
+    this.updatedReflections = false;
+    this.updatedThoughts = false;
+    this.updatedFavorite = false;
     setTimeout(() => {
       this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
     }, 1000);
-    this.saved = true;
   }
 }
 
@@ -398,7 +395,8 @@ const styles = ScaledSheet.create({
   addButton: {
     backgroundColor: colors.primary,
     bottom: '15@vs',
-    left: '15@ms',
+    position: 'absolute',
+    right: '15@ms',
   },
   bookmark: {
     color: colors.grey,
@@ -433,25 +431,16 @@ const styles = ScaledSheet.create({
     color: '#FFFFFF',
     fontSize: fonts.medium,
   },
-  checkButton: {
-    alignItems: 'center',
-    backgroundColor: colors.secondary,
-    borderRadius: 100,
-    elevation: 4,
-    height: '45@ms',
-    justifyContent: 'center',
-    width: '45@ms',
-  },
-  checkContainer: {
-    bottom: '11@vs',
-    height: '49@ms',
-    position: 'absolute',
-    right: '15@ms',
-    width: '45@ms',
-  },
   container: {
     backgroundColor: '#FFFFFF',
     flex: 1,
+  },
+  count: {
+    alignSelf: 'center',
+    color: colors.secondary,
+    fontSize: fonts.medium,
+    position: 'absolute',
+    right: '20@ms',
   },
   date: {
     color: colors.darkGrey,
