@@ -11,8 +11,10 @@ import {
 import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
 import Aicon from 'react-native-vector-icons/FontAwesome';
+import Micon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Swiper from 'react-native-swiper';
 import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
+import Voice from 'react-native-voice';
 
 
 export default class Stem extends React.PureComponent {
@@ -23,11 +25,15 @@ export default class Stem extends React.PureComponent {
     this.updatedThoughts;
     this.updatedReflections;
     this.updatedFavorite;
+    Voice.onSpeechResults = this.onSpeechResults.bind(this);
+    Voice.onSpeechPartialResults = this.onSpeechPartialResults.bind(this);
     this.state = {
+      adding: false,
       dotFuncs: {},
       favorite: props.navigation.state.params && typeof props.navigation.state.params.favorite === 'boolean' ? props.navigation.state.params.favorite : false,
       keyboardShowing: false,
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
+      recording: false,
       reflectCount: 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
       thoughtCount: 0,
@@ -64,15 +70,19 @@ export default class Stem extends React.PureComponent {
 
   render() {
     const {
+      hideThoughts,
       navigation,
+      premium,
       // updateStemInRealm,
     } = this.props;
 
     const {
+      adding,
       dotFuncs,
       favorite,
       index,
       keyboardShowing,
+      recording,
       reflectCount,
       reflections,
       thoughtCount,
@@ -80,9 +90,7 @@ export default class Stem extends React.PureComponent {
       value,
     } = this.state;
     
-    // const { params } = this.props.navigation.state;
     const { 
-      hideThoughts,
       thinkDate,
       reflectDate,
       stem,
@@ -188,10 +196,28 @@ export default class Stem extends React.PureComponent {
           />
           <TouchableOpacity
             activeOpacity={.8}
+            onPress={() => this._startRecognizing()}
+            style={[styles.button, styles.voiceButton, premium && { backgroundColor: colors.primary }]}
+          >
+            <Aicon name={'microphone'} style={styles.buttonIcon} />
+          </TouchableOpacity>
+          {
+            recording && <Micon name={'voice'} style={styles.voice} />
+          }
+          <TouchableOpacity
+            activeOpacity={.8}
             onPress={this.handleAdd}
             style={[styles.button, styles.addButton]}
           >
-            <Aicon name={'plus'} style={styles.buttonIcon} />
+            {
+              adding ?
+              <ActivityIndicator
+                size="small" 
+                color="#FFFFFF"
+              />
+              :
+              <Aicon name={'plus'} style={styles.buttonIcon} />
+            }
           </TouchableOpacity>
         </View>
         { Platform.OS === 'ios' && keyboardShowing && <View style={{ height: this.keyboardHeight }} /> }
@@ -225,6 +251,13 @@ export default class Stem extends React.PureComponent {
       this.keyboardDidShowListener.remove();
     }
     this.keyboardDidHideListener.remove();
+    if (this.props.premium) {
+      try {
+        Voice.destroy().then(Voice.removeAllListeners);
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
 
   _keyboardWillShow(e) {
@@ -244,6 +277,10 @@ export default class Stem extends React.PureComponent {
 
   handleAdd() {
     if (this.preventAdd) return;
+    this.setState({ adding: true });
+    setTimeout(() => {
+      this.setState({ adding: false });
+    }, 750);
     this.preventAdd = true;
     setTimeout(() => this.preventAdd = false, 500);
     const { index, reflectCount, thoughtCount, value } = this.state;
@@ -275,6 +312,9 @@ export default class Stem extends React.PureComponent {
       } else {
         this.input.focus();
       }
+    }
+    if (this.state.recording) {
+      this._stopRecognizing();
     }
   }
 
@@ -310,6 +350,42 @@ export default class Stem extends React.PureComponent {
   getPrettyDate(int) {
     const date = new Date(int);
     return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  }
+
+  onSpeechPartialResults(e) {
+    this.setState({ value: e.value[0] });
+  }
+
+  onSpeechResults(e) {
+    this.setState({ value: `${e.value[0][0].toUpperCase()}${e.value[0].substr(1)}.`, recording: false });
+  }
+
+  async _startRecognizing(e) {
+    // TODO !IMPORTANT Uncomment this before production
+    // if (!this.props.premium) {
+    //   // TODO Send a premium only message 
+    //   return;
+    // }
+    try {
+      await Voice.start('en-US');
+      this.setState({ recording: true });
+      setTimeout(() => {
+        if (!this.state.value) {
+          this.setState({ recording: false });
+        }
+      }, 5000);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async _stopRecognizing(e) {
+    try {
+      await Voice.stop();
+      this.setState({ recording: false });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   updateStem() {
@@ -526,5 +602,18 @@ const styles = ScaledSheet.create({
     fontSize: fonts.medium,
     textAlign: 'center',
     marginBottom: '10@vs',
+  },
+  voice: {
+    bottom: '15@vs',
+    color: colors.primary,
+    fontSize: fonts.medium,
+    left: '60@ms',
+    position: 'absolute',
+  },
+  voiceButton: {
+    backgroundColor: colors.grey,
+    bottom: '15@vs',
+    left: '15@ms',
+    position: 'absolute',
   },
 });
