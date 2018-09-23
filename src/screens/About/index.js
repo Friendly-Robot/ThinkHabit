@@ -12,7 +12,7 @@ export default class About extends React.PureComponent {
 
     return (
       <View style={styles.container}>
-        <Header navigation={navigation} />
+        <Header navigation={navigation} title={'About'} />
       </View>
     )
   }
