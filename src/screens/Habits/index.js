@@ -1127,10 +1127,12 @@ class StemCard extends React.PureComponent {
       handleRemoveFromQueue: () => this.handleRemoveFromQueue(),
     }
     this.state = {
+      favorite: false,
       realmStem: {},
       inQueue: props.queue.some(s => s.id === props.stem.id),
     }
     this.handleThink = this.handleThink.bind(this);
+    this.toggleFavorite = this.toggleFavorite.bind(this);
     this.updateRealmStem = this.updateRealmStem.bind(this);
   }
 
@@ -1143,12 +1145,20 @@ class StemCard extends React.PureComponent {
       // removeFromQueue,
       stem,
     } = this.props;
-    const { inQueue, realmStem } = this.state;
+    const { favorite, inQueue, realmStem } = this.state;
     
     const reflect = Object.keys(realmStem).length && (realmStem['thoughts'].length && realmStem['reflections'].length === 0);
     
     return (
       <View style={stemStyles.container}>
+        <TouchableOpacity
+          activeOpacity={.8}
+          hitSlop={{ top: 20, right: 20, bottom: 20, left: 20 }}
+          onPress={this.toggleFavorite}
+          style={stemStyles.bookmarkContainer}
+        >
+          <Aicon name={'bookmark'} style={[stemStyles.bookmark, favorite && { color: colors.primary }]} />
+        </TouchableOpacity>
         <View style={stemStyles.stemContainer}>
           <Text style={stemStyles.stemUpper}>{ stem.stem.substr(0, stem.stem.indexOf(' ')) }</Text>
           <Text style={stemStyles.stem}>{ stem.stem.substr(stem.stem.indexOf(' ')) }</Text>
@@ -1207,8 +1217,47 @@ class StemCard extends React.PureComponent {
     .then(realm => {
       const Stem = realm.objectForPrimaryKey('Stem', stem['id']);
       if (Stem) {
-        this.setState({ realmStem: Stem });
+        this.setState({ realmStem: Stem, favorite: Stem['favorite'] });
       }
+    });
+  }
+
+  toggleFavorite() {
+    const { favorite, realmStem } = this.state;
+    if (Object.keys(realmStem).length) {
+      this.updateStemInRealm(realmStem, !favorite);
+    } else {
+      const { habit, stem } = this.props;
+      this.createNewStemInRealm(stem, !favorite, habit);
+    }
+    this.setState({ favorite: !favorite });
+  }
+
+  updateStemInRealm(stem, favorite) {
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      realm.write(() => {
+        stem['favorite'] = favorite;
+      });
+    });
+  }
+
+  createNewStemInRealm(stem, favorite, habit) {
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const newStem = {
+        id: stem['id'],
+        favorite,
+        habit,
+        stem: stem['stem'],
+        thinkDate: 0,
+        thoughts: [],
+        reflectDate: 0,
+        reflections: [],
+      };
+      realm.write(() => {
+        realm.create('Stem', newStem);
+      });
     });
   }
   
@@ -1217,7 +1266,7 @@ class StemCard extends React.PureComponent {
     const { realmStem } = this.state;
     let params = {};
     if (Object.keys(realmStem).length) {
-      if (realmStem['reflections'] && realmStem['reflections'].length === 0) {
+      if (realmStem['thoughts'].length && realmStem['reflections'].length === 0) {
         params = { reflection: true, ...realmStem, updateRealmStem: this.updateRealmStem };
       } else {
         params = { ...realmStem, updateRealmStem: this.updateRealmStem };
@@ -1254,6 +1303,15 @@ class StemCard extends React.PureComponent {
 import { ScaledSheet } from 'react-native-size-matters';
 
 const stemStyles = ScaledSheet.create({
+  bookmark: {
+    color: colors.grey,
+    fontSize: fonts.medium,
+  },
+  bookmarkContainer: {
+    position: 'absolute',
+    right: '15@ms',
+    top: '10@ms',
+  },
   bottomContainer: {
     alignItems: 'flex-end',
     alignSelf: 'stretch',
