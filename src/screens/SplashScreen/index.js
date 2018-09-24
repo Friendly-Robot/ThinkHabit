@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Platform,
   View,
 } from 'react-native';
 import { colors } from '../../config/styles';
@@ -21,7 +22,7 @@ export default class SplashScreen extends React.PureComponent {
       const { appSet } = nextProps;
       this.navigationAction = setTimeout(() => {
         // Prevent normal routing if app was opened from notification.
-        if (this.props.notification) return;
+        if (this.props.notification && Platform.OS !== 'ios') return;
 
         if (appSet) {
           const resetAction = StackActions.reset({
