@@ -510,23 +510,27 @@ export default class App extends React.Component {
       //   reflection: 'bool',
       // }
       if (queue.length === 0) {
-        // Populate newQueue with notifications
-        newQueue = this.addNewStemsToQueue(numberOfStemsPerDay, currHabit, this.state[currHabit]['completedStems']);
-        if (newQueue.length === 0) {
-          // TODO How to handle when user is finished with this think habit?
-          // TODO Notify the user that they've finished this think habit
-          newQueue = this.resetNewStemsToQueue(numberOfStemsPerDay, currHabit);
-        }
-        queuedNotification = newQueue[0];
-        Realm.open({schema: Schema, schemaVersion: 0})
-        .then(realm => {
-          realm.write(() => {
-            newQueue.map(item => {
-              const QueueItem = realm.create('QueueItem', item);
-              Settings['queue'].push(QueueItem);
+        if (currhabit === 'Bookmarks') {
+          newQueue = this.addNewBookmarksToQueue();
+        } else {
+          // Populate newQueue with notifications
+          newQueue = this.addNewStemsToQueue(numberOfStemsPerDay, currHabit, this.state[currHabit]['completedStems']);
+          if (newQueue.length === 0) {
+            // TODO How to handle when user is finished with this think habit?
+            // TODO Notify the user that they've finished this think habit
+            newQueue = this.resetNewStemsToQueue(numberOfStemsPerDay, currHabit);
+          }
+          queuedNotification = newQueue[0];
+          Realm.open({schema: Schema, schemaVersion: 0})
+          .then(realm => {
+            realm.write(() => {
+              newQueue.map(item => {
+                const QueueItem = realm.create('QueueItem', item);
+                Settings['queue'].push(QueueItem);
+              });
             });
           });
-        });
+        }
       }
 
       const multiply = reflectNotificationTime.length ? 2 : 1;
@@ -935,6 +939,15 @@ export default class App extends React.Component {
       }
     }
     return queue;
+  }
+
+  addNewBookmarksToQueue() {
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const Bookmarks = realm.objects('Stem').filtered('favorite = $0', true);
+      const random = Math.floor(Math.random() * Bookmarks.length);
+      return [Bookmarks[random]];
+    });
   }
 
   toggleHabitProgress(habit) {
