@@ -34,7 +34,6 @@ export default class Habits extends React.PureComponent {
       habitSeq: [...props.habitSeq],
       index: 0,
       inProgress: props.currHabit === props.habitSeq[0],
-      numberOfStemsPerDay: props.numberOfStemsPerDay,
       repeat: props.repeat,
       save: false,
       RNT: {},
@@ -46,8 +45,6 @@ export default class Habits extends React.PureComponent {
     this.navigateToStem = this.navigateToStem.bind(this);
     this.toggleSettings = this.toggleSettings.bind(this);
     this.toggleProgress = this.toggleProgress.bind(this);
-    this.handleStemInc = this.handleStemInc.bind(this);
-    this.handleStemDec = this.handleStemDec.bind(this);
     this.handleRepeatInc = this.handleRepeatInc.bind(this);
     this.handleRepeatDec = this.handleRepeatDec.bind(this);
     this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
@@ -67,7 +64,6 @@ export default class Habits extends React.PureComponent {
       // currHabit,
       // habitSeq,
       navigation,
-      // numberOfStemsPerDay,
       premium,
       queue,
       removeFromQueue,
@@ -84,7 +80,6 @@ export default class Habits extends React.PureComponent {
       habitSeq,
       index,
       inProgress,
-      numberOfStemsPerDay,
       repeat,
       save,
       RNT,
@@ -161,30 +156,6 @@ export default class Habits extends React.PureComponent {
                       `disabled`
                   }
                 </Text>
-              </View>
-              <View style={styles.incContainer}>
-                <Text style={styles.incTitle}>Number of stems per day</Text>
-                <View style={styles.incButtons}>
-                  <TouchableOpacity
-                    activeOpacity={.8}
-                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                    onPress={this.handleStemDec}
-                    style={styles.incButton}
-                  >
-                    <Aicon name={'minus'} style={styles.incIcon} />
-                  </TouchableOpacity>
-
-                  <Text style={styles.incCount}>{ numberOfStemsPerDay }</Text>
-
-                  <TouchableOpacity
-                    activeOpacity={.8}
-                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                    onPress={this.handleStemInc}
-                    style={styles.incButton}
-                  >
-                    <Aicon name={'plus'} style={styles.incIcon} />
-                  </TouchableOpacity>
-                </View>
               </View>
               <View style={styles.incContainer}>
                 <Text style={styles.incTitle}>Repeat</Text>
@@ -717,9 +688,6 @@ export default class Habits extends React.PureComponent {
         this.scrollToIndex0();
       });
     }
-    if (this.props.numberOfStemsPerDay !== nextProps.numberOfStemsPerDay) {
-      this.setState({ numberOfStemsPerDay: nextProps.numberOfStemsPerDay });
-    }
     if (this.props.repeat !== nextProps.repeat) {
       this.setState({ repeat: nextProps.repeat });
     }
@@ -856,30 +824,6 @@ export default class Habits extends React.PureComponent {
     this.setState({ inProgress: !inProgress, save: true });
   }
 
-  handleStemInc() {
-    const { numberOfStemsPerDay } = this.state;
-    if (this.manualProgressSwitch) {
-      this.manualProgressSwitch = false;
-      this.setState({ numberOfStemsPerDay: numberOfStemsPerDay + 1, inProgress: true, save: true });
-      return;      
-    }
-    this.setState({ numberOfStemsPerDay: numberOfStemsPerDay + 1, save: true });
-  }
-
-  handleStemDec() {
-    const { inProgress, numberOfStemsPerDay } = this.state;
-    if (numberOfStemsPerDay - 1 <= 0 ) {
-      if (inProgress) {
-        this.manualProgressSwitch = true;
-        this.setState({ numberOfStemsPerDay: 0, inProgress: false, save: true });
-      } else {
-        this.setState({ numberOfStemsPerDay: 0, save: true });        
-      }
-      return;
-    }
-    this.setState({ numberOfStemsPerDay: numberOfStemsPerDay - 1, save: true });
-  }
-
   handleRepeatInc() {
     const { repeat } = this.state;
     this.setState({ repeat: repeat + 1, save: true });
@@ -1012,7 +956,6 @@ export default class Habits extends React.PureComponent {
     const { 
       index,
       inProgress,
-      numberOfStemsPerDay,
       repeat,
       RNT,
       RND,
@@ -1059,7 +1002,6 @@ export default class Habits extends React.PureComponent {
     const updatedSettings = {
       currHabit: updatedCurrHabit,
       habitSeq: updatedHabitSeq,
-      numberOfStemsPerDay,
       repeat,
       reflectNotificationTime,
       reflectNotificationDay,
