@@ -6,12 +6,17 @@ import {
   View, 
   ScrollView,
 } from 'react-native';
-import { DrawerActions, DrawerItems, NavigationActions, SafeAreaView } from 'react-navigation';
+import { DrawerItems, SafeAreaView } from 'react-navigation';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import { colors, fonts } from '../../config/styles';
 
 
 export default class Navigator extends React.PureComponent {
+  constructor() {
+    super();
+    this.handleSettingsNavigation = this.handleSettingsNavigation.bind(this);
+  }
+
   render() {
     const {
       activeItemKey,
@@ -35,7 +40,12 @@ export default class Navigator extends React.PureComponent {
               <Aicon name={'user'} style={styles.user} />
             }
           </View>
-          <Text style={styles.name}>{ name ? name : picture ? '' :  'Setup your profile' }</Text>
+          <TouchableOpacity
+            activeOpacity={.8}
+            onPress={this.handleSettingsNavigation}
+          >
+            <Text style={styles.name}>{ name ? name : picture ? '' :  'Setup your profile' }</Text>
+          </TouchableOpacity>
         </View>
         <ScrollView contentContainerStyle={styles.flexGrow}>
           <SafeAreaView style={styles.flex} forceInset={{ top: 0, horizontal: 'never' }}>
@@ -58,16 +68,9 @@ export default class Navigator extends React.PureComponent {
     )
   }
 
-  componentDidMount() {
-    const routes = {
-      'HireMe': () => this.navigateToScreen('HireMe'),
-      'Checkout': () => this.navigateToScreen('Checkout'),
-      'Favorites': () => this.navigateToScreen('Favorites'),
-      'Queue': () => this.navigateToScreen('Queue'),
-    };
-    this.setState({ routes });
+  handleSettingsNavigation() {
+    this.props.navigation.navigate('Settings');
   }
-
 }
 
 import { ScaledSheet } from 'react-native-size-matters';
