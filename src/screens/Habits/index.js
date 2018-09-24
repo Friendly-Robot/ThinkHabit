@@ -65,7 +65,7 @@ export default class Habits extends React.PureComponent {
       // currHabit,
       // habitSeq,
       navigation,
-      // premium,
+      premium,
       queue,
       removeFromQueue,
       // repeat,
@@ -94,6 +94,8 @@ export default class Habits extends React.PureComponent {
     //   completedStems: 'string[]',
     //   name: 'string',
     // } = this.props.habit;
+
+    console.log('currhaibt', this.props.currHabit, inProgress)
 
     return (
       <View style={styles.mainContainer}>
@@ -151,8 +153,8 @@ export default class Habits extends React.PureComponent {
                     inProgress ?
                     `currently in progress`
                     :
-                      index === 6 ?
-                      'upgrade to queue'
+                      index === 0 ?
+                      premium ? 'disabled' : 'upgrade to queue'
                       :
                       `disabled`
                   }
@@ -682,14 +684,20 @@ export default class Habits extends React.PureComponent {
 
   componentWillReceiveProps(nextProps) {
     if (this.props.currHabit !== nextProps.currHabit) {
-      const { index } = this.state;
-      this.setState({ 
-        currHabit: nextProps.currHabit,
-        habitSeq: [...nextProps.habitSeq],
-        inProgress: nextProps.currHabit === nextProps.habitSeq[index],
-      }, () => {
-        this.scrollToIndex1();
-      });
+      if (nextProps.currHabit === 'Bookmarks') {
+        this.setState({ 
+          currHabit: nextProps.currHabit,
+          inProgress: true,
+        });
+      } else {
+        this.setState({ 
+          currHabit: nextProps.currHabit,
+          habitSeq: [...nextProps.habitSeq],
+          inProgress: nextProps.currHabit ? true : false,
+        }, () => {
+          this.scrollToIndex1();
+        });
+      }
     }
     if (this.props.repeat !== nextProps.repeat) {
       this.setState({ repeat: nextProps.repeat });
@@ -825,8 +833,8 @@ export default class Habits extends React.PureComponent {
   }
 
   toggleProgress() {
-    const { index, inProgress, premium } = this.state;
-    if (index === 6 && !premium) return;
+    const { index, inProgress } = this.state;
+    if (index === 0 && !this.props.premium) return;
     this.setState({ inProgress: !inProgress, save: true });
   }
 
@@ -997,9 +1005,17 @@ export default class Habits extends React.PureComponent {
       reflectNotificationTime = [];
     }
     let updatedCurrHabit = '';
-    if (inProgress) updatedCurrHabit = habitSeq[index];
-    if (!inProgress && currHabit === habitSeq[index]) updatedCurrHabit = '';
-    if (!inProgress && index !== 0 && currHabit) updatedCurrHabit = currHabit;
+    if (inProgress) {
+      if (index === 0) {
+        updatedCurrHabit = 'Bookmarks';
+      } else {
+        updatedCurrHabit = habitSeq[index - 1];
+      }
+    } else if (!inProgress && (index === 1 || (index === 0 && currHabit === 'Bookmarks'))) {
+      updatedCurrHabit = '';
+    } else if (!inProgress && (index !== 1 || (index === 0 && currHabit === 'Bookmarks')) && currHabit) {
+      updatedCurrHabit = currHabit;
+    }
     const updatedHabitSeq = [...habitSeq];
     if (updatedCurrHabit !== currHabit && updatedCurrHabit) {
       updatedHabitSeq.splice(updatedHabitSeq.indexOf(updatedCurrHabit), 1);
@@ -1021,58 +1037,43 @@ export default class Habits extends React.PureComponent {
   handleSwiperUpdate() {
     const { index } = this.swiper.state;
     const { currHabit, habitSeq } = this.props;
+    let inProgress = false;
+    if (currHabit === habitSeq[index - 1]) {
+      inProgress = true;
+    } else if (currHabit === 'Bookmarks' && index === 0) {
+      inProgress = true;
+    }
     this.setState({ 
       index,
-      inProgress: currHabit === habitSeq[index],
+      inProgress,
     });
   }
 
   scrollToIndex1() {
     const { index } = this.swiper.state;
-    switch (index) {
-      case 0:
-        this.swiper.scrollBy(1);
-      case 1:
-        return;
-      case 2:
-        this.swiper.scrollBy(-1);
-      case 3:
-        this.swiper.scrollBy(-2);
-      case 4:
-        this.swiper.scrollBy(-3);
-      case 5:
-        this.swiper.scrollBy(-4);
-      case 6:
-        this.swiper.scrollBy(-5);
+    if (index === 1) return;
+    if (index === 0) {
+      this.swiper.scrollBy(1, false);
+    } else {
+      this.swiper.scrollBy(-(index - 1), false);
     }
   }
 
   scrollRight() {
-    if (this.swiper.state.index === 6) {
-      this.swiper.scrollBy(-6, false);
+    const { habitSeq } = this.state;
+    const { index } = this.swiper.state;
+    const length = habitSeq.length;
+    if (index === length) {
+      this.swiper.scrollBy(-(length), false);
     } else {
-      this.swiper.scrollBy(1);
+      this.swiper.scrollBy(1, true);
     }
   }
 
   navigateToBookmarks() {
     const { index } = this.swiper.state;
-    switch (index) {
-      case 0:
-        return
-      case 1:
-        this.swiper.scrollBy(-1);
-      case 2:
-        this.swiper.scrollBy(-2);
-      case 3:
-        this.swiper.scrollBy(-3);
-      case 4:
-        this.swiper.scrollBy(-4);
-      case 5:
-        this.swiper.scrollBy(-5);
-      case 6:
-        this.swiper.scrollBy(-6);
-    }
+    if (index === 0) return;
+    this.swiper.scrollBy(-(index));
   }
 
   navigateToStem(data) {
