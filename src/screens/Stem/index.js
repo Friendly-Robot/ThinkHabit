@@ -68,6 +68,7 @@ export default class Stem extends React.PureComponent {
     this._keyboardDidHide = this._keyboardDidHide.bind(this);
     this._keyboardWillShow = this._keyboardWillShow.bind(this);
     this._keyboardDidShow = this._keyboardDidShow.bind(this);
+    this.handleVoiceRecord = this.handleVoiceRecord.bind(this);
     this.updateStem = this.updateStem.bind(this);
   }
 
@@ -197,7 +198,8 @@ export default class Stem extends React.PureComponent {
 
           <TouchableOpacity
             activeOpacity={.8}
-            onPress={() => this._startRecognizing()}
+            hitSlop={{top: 10, right: 10, bottom: 10, left: 10}}
+            onPress={this.handleVoiceRecord}
             style={[styles.button, styles.voiceButton, premium && { backgroundColor: colors.primary }]}
           >
             {
@@ -209,6 +211,7 @@ export default class Stem extends React.PureComponent {
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={.8}
+            hitSlop={{top: 10, right: 10, bottom: 10, left: 10}}
             onPress={this.handleAdd}
             style={[styles.button, styles.addButton]}
           >
@@ -308,7 +311,16 @@ export default class Stem extends React.PureComponent {
         }
         const { reflections } = this.state;
         const res = [value, ...reflections];
-        this.setState({ reflections: res, value: '', reflectCount: reflectCount + 1 });
+        if (this.state.recording) {
+          this._stopRecognizing();
+        }
+        this.setState({ 
+          recording: false,
+          reflectCount: reflectCount + 1, 
+          reflections: res, 
+          value: '', 
+          keyboardShowing: false 
+        });
         this.updatedReflections = true;
       }
       if (this.valueStore) this.valueStore = '';
@@ -361,6 +373,11 @@ export default class Stem extends React.PureComponent {
   }
 
   onSpeechPartialResults(e) {
+    if (Platform.OS === 'ios') {
+      this.setState({ value: e.value[0] });
+      return;
+    }
+
     let value = '';
     if (this.valueStore) {
       value = `${this.valueStore} ${e.value}`;
@@ -371,6 +388,15 @@ export default class Stem extends React.PureComponent {
   }
 
   onSpeechResults(e) {
+    if (Platform.OS === 'ios') {
+      this.setState({ value: e.value[0] });
+      setTimeout(() => {
+        if (!this.state.recording && this.state.value) {
+          this.setState({ value: `${e.value[0]}.` });
+        }
+      }, 2000);
+      return;
+    }
     let value = '';
     if (this.valueStore) {
       if (e.value[0].length) {
@@ -410,9 +436,17 @@ export default class Stem extends React.PureComponent {
   async _stopRecognizing(e) {
     try {
       await Voice.stop();
-      this.setState({ recording: false });
+      this.setState({ recording: false });        
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  handleVoiceRecord() {
+    if (this.state.recording) {
+      this._stopRecognizing();
+    } else {
+      this._startRecognizing();
     }
   }
 
