@@ -129,7 +129,7 @@ export default class Settings extends React.PureComponent {
                 <Text style={[styles.perky, { fontWeight: 'bold' }]}>Upgrade to premium version</Text>
                 <Text style={styles.perky}>$0.99</Text>
               </View>
-              <Text style={styles.perky}>Unlock favorites queue</Text>
+              <Text style={styles.perky}>Unlock bookmarks queue</Text>
               <Text style={styles.perky}>Support developer</Text>
               <Text style={styles.perky}>Voice dictation</Text>
               <Text style={styles.perky}>Remove ads</Text>
