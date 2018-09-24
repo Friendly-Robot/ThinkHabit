@@ -39,6 +39,10 @@
 	<string></string>
 	<key>NSMainNibFile</key>
 	<string>LaunchScreen</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Use microphone to translate voice to text for voice dictation.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Use voice dictation to record thoughts rather than type.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Entypo.ttf</string>
