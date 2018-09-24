@@ -667,7 +667,16 @@ export default class App extends React.Component {
         nextReflectNotificationTime = reflectNotificationTime[0];
       }
 
-      console.log('Pre calculation variables', daySought, sameThinkDay, nextThinkDay, sameReflectDay, nextReflectDay, nextThinkNotificationTime, nextReflectNotificationTime)
+      console.log(
+        `Pre calculation variables:'
+        daySought: ${daySought},
+        sameThinkDay: ${sameThinkDay},
+        nextThinkDay: ${nextThinkDay},
+        sameReflectDay: ${sameReflectDay},
+        nextReflectDay: ${nextReflectDay},
+        nextThinkNotificationTime: ${nextThinkNotificationTime},
+        nextReflectNotificationTime: ${nextReflectNotificationTime}
+      `)
 
       if (sameThinkDay && sameReflectDay) {
         if (nextThinkNotificationTime < nextReflectNotificationTime) {
@@ -778,11 +787,6 @@ export default class App extends React.Component {
     console.log('nextReflectNotificationTime', nextReflectNotificationTime)
     console.log('reflectNotificationDay', reflectNotificationDay)
     console.log('millisecondsTillNextNotification', millisecondsTillNextNotification)
-    // console.log('sameThinkDay', sameThinkDay)
-    // console.log('sameReflectDay', sameReflectDay)
-    // console.log('nextThinkDay', nextThinkDay)
-    // console.log('nextReflectDay', nextReflectDay)
-    // console.log('daySought', daySought)
 
     const dateOfNotification = new Date(Date.now() + millisecondsTillNextNotification);
 
@@ -826,7 +830,7 @@ export default class App extends React.Component {
       repeatTime: 86400000,
       // actions: '["Later", "Think"]',  // (Android only) See the doc for notification actions to know more
 
-      date: new Date(Date.now() + 10000), //dateOfNotification, 
+      date: dateOfNotification, //new Date(Date.now() + 10000),
     });
   }
 
@@ -906,7 +910,7 @@ export default class App extends React.Component {
   }
 
   addNewStemsToQueue(currHabit, currStem) {
-    let currStemIndex;
+    let currStemIndex = 0;
     Data[currHabit].some((stem, idx) => {
       if (currStem === stem['id']) {
         currStemIndex = idx;
