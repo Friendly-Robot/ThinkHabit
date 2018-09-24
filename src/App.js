@@ -38,7 +38,6 @@ const HabitsNavigator = createStackNavigator({
           currHabit={props.screenProps.Settings.currHabit}
           habitSeq={props.screenProps.Settings.habitSeq}
           navigation={props.navigation}
-          numberOfStemsPerDay={props.screenProps.Settings.numberOfStemsPerDay}
           passNavigationContext={props.screenProps.passNavigationContext}
           premium={props.screenProps.Settings.premium}
           queue={props.screenProps.Settings.queue}
@@ -390,11 +389,11 @@ export default class App extends React.Component {
         realm.create('Settings', { 
           currDay, 
           currHabit: '', 
+          currStem: '',
           daysInRow: 0, 
           habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
           joinDate, 
           name: '', 
-          numberOfStemsPerDay: 1, 
           picture: '',
           premium: false,
           queue: [],
@@ -414,11 +413,11 @@ export default class App extends React.Component {
       Settings: { 
         currDay,
         currHabit: '',
+        currStem: '',
         daysInRow: 0,
         habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
         joinDate,
         name: '',
-        numberOfStemsPerDay: 1,
         picture: '',
         premium: false, // TODO Check IAP if purchase history found somehow?
         queue: [],
@@ -494,7 +493,7 @@ export default class App extends React.Component {
   setNextPushNotification(queuedStem) {
     PushNotification.cancelAllLocalNotifications();
     const { Settings } = this.state;
-    const { currHabit, numberOfStemsPerDay, queue, reflectNotificationTime, repeat, sound } = Settings;
+    const { currHabit, currStem, queue, reflectNotificationTime, repeat, sound } = Settings;
     console.log('Queue in setNextPushNotification from state:', queue)
     if (!currHabit && !queuedStem) return;
     let newQueue = [];
@@ -510,15 +509,15 @@ export default class App extends React.Component {
       //   reflection: 'bool',
       // }
       if (queue.length === 0) {
-        if (currhabit === 'Bookmarks') {
-          newQueue = this.addNewBookmarksToQueue();
+        if (currHabit === 'Bookmarks') {
+          newQueue = this.addNewBookmarksToQueue(currStem);
         } else {
           // Populate newQueue with notifications
-          newQueue = this.addNewStemsToQueue(numberOfStemsPerDay, currHabit, this.state[currHabit]['completedStems']);
+          newQueue = this.addNewStemsToQueue(currHabit, currStem);
           if (newQueue.length === 0) {
             // TODO How to handle when user is finished with this think habit?
             // TODO Notify the user that they've finished this think habit
-            newQueue = this.resetNewStemsToQueue(numberOfStemsPerDay, currHabit);
+            newQueue = this.resetNewStemsToQueue(currHabit, currStem);
           }
           queuedNotification = newQueue[0];
           Realm.open({schema: Schema, schemaVersion: 0})
@@ -547,8 +546,9 @@ export default class App extends React.Component {
         Realm.open({schema: Schema, schemaVersion: 0})
         .then(realm => {
           realm.write(() => {
-            const QueueItem = Settings['queue'][0];
-            realm.delete(QueueItem);
+            const oldStem = Settings['queue'].shift();
+            realm.delete(oldStem);
+            this.setState({ Settings });
           });
         });
       }
@@ -883,70 +883,76 @@ export default class App extends React.Component {
     return millisecondsTillNextNotification;
   }
 
-  resetNewStemsToQueue(numberOfStemsPerDay, currHabit) {
-    const queue = [];
-    const addedToQueue = {};
+  resetNewStemsToQueue(currHabit, currStem) {
     const length = Data[currHabit].length;
-    for (let i = 0; i < numberOfStemsPerDay; i += 1) {
-      let randomThought = Math.floor(Math.random() * length);
-      let id = Data[currHabit][randomThought]['id'];
-      if (!addedToQueue[id]) {
-        addedToQueue[id] = true;
-        const stem = {
+    let randomThought = Math.floor(Math.random() * length);
+    let id = Data[currHabit][randomThought]['id'];
+    let stem;
+
+    while (currStem === id) {
+      randomThought = Math.floor(Math.random() * length);
+      id = Data[currHabit][randomThought]['id'];
+      if (currStem !== id) {
+        stem = {
           notified: 0,
           id,
           stem: Data[currHabit][randomThought]['stem'],
           habit: currHabit,
         };
-        queue.push(stem);
-      } else {
-        while (addedToQueue[id]) {
-          randomThought = Math.floor(Math.random() * length);
-          id = Data[currHabit][randomThought]['id'];
-          if (!addedToQueue[id]) {
-            const stem = {
-              notified: 0,
-              id,
-              stem: Data[currHabit][randomThought]['stem'],
-              habit: currHabit,
-            };
-            queue.push(stem);
-          }
-        }
-        addedToQueue[id] = true;
       }
     }
-    return queue;
+    this.updateCurrStem(id);
+    return [stem];
   }
 
-  addNewStemsToQueue(numberOfStemsPerDay, currHabit, completedStems) {
-    const queue = [];
-    const addedToQueue = {};
-    for (let i = 0; i < numberOfStemsPerDay; i += 1) {
-      for (let j = 0; j < Data[currHabit].length; j += 1) {
-        const id = Data[currHabit][j]['id'];
-        if (!addedToQueue[id] && completedStems.indexOf(id) === -1) {
-          const stem = {
-            notified: 0,
-            id,
-            stem: Data[currHabit][j]['stem'],
-            habit: currHabit,
-          };
-          queue.push(stem);
-          addedToQueue[id] = true;
-          break;
-        }
+  addNewStemsToQueue(currHabit, currStem) {
+    let currStemIndex;
+    Data[currHabit].some((stem, idx) => {
+      if (currStem === stem['id']) {
+        currStemIndex = idx;
+        return true;
       }
+    });
+    let nextIndex = 0;
+    if (currStemIndex === Data[currHabit].length - 1) {
+      nextIndex = 0;
+    } else {
+      nextIndex += currStemIndex + 1;
     }
-    return queue;
+    let id = Data[currHabit][nextIndex]['id'];
+    const stem = {
+      notified: 0,
+      id,
+      stem: Data[currHabit][nextIndex]['stem'],
+      habit: currHabit,
+    };
+    this.updateCurrStem(id);
+    return [stem];
   }
 
-  addNewBookmarksToQueue() {
+  addNewBookmarksToQueue(currStem) {
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       const Bookmarks = realm.objects('Stem').filtered('favorite = $0', true);
-      const random = Math.floor(Math.random() * Bookmarks.length);
+      let random = Math.floor(Math.random() * Bookmarks.length);
+      if (Bookmarks[random]['id'] === currStem && Bookmarks.length > 1) {
+        while (Bookmarks[random]['id'] === currStem) {
+          random = Math.floor(Math.random() * Bookmarks.length);
+        }
+      }
+      this.updateCurrStem(Bookmarks[random]['id']);
       return [Bookmarks[random]];
+    });
+  }
+
+  updateCurrStem(id) {
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const Settings = realm.objects('Settings')[0];
+      realm.write(() => {
+        Settings['currStem'] = id;
+        this.setState({ Settings });
+      });
     });
   }
 
@@ -979,7 +985,6 @@ export default class App extends React.Component {
       realm.write(() => {
         Settings['currHabit'] = object['currHabit'];
         Settings['habitSeq'] = object['habitSeq'];
-        Settings['numberOfStemsPerDay'] = object['numberOfStemsPerDay'];
         Settings['repeat'] = object['repeat'];
         Settings['reflectNotificationTime'] = object['reflectNotificationTime'];
         Settings['reflectNotificationDay'] = object['reflectNotificationDay'];
