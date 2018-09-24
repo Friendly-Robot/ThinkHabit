@@ -1017,7 +1017,7 @@ export default class Habits extends React.PureComponent {
       updatedCurrHabit = currHabit;
     }
     const updatedHabitSeq = [...habitSeq];
-    if (updatedCurrHabit !== currHabit && updatedCurrHabit) {
+    if (updatedCurrHabit !== currHabit && updatedCurrHabit && updatedCurrHabit !== 'Bookmarks') {
       updatedHabitSeq.splice(updatedHabitSeq.indexOf(updatedCurrHabit), 1);
       updatedHabitSeq.unshift(updatedCurrHabit);
     }
