@@ -14,6 +14,7 @@ export default class Header extends React.PureComponent {
     super();
     this.handleBack = this.handleBack.bind(this);
     this.handleHome = this.handleHome.bind(this);
+    this.handleNavigateToBookmarks = this.handleNavigateToBookmarks.bind(this);
     this.handleMenu = this.handleMenu.bind(this);
   }
 
@@ -21,7 +22,7 @@ export default class Header extends React.PureComponent {
     const { 
       backArrow,
       // navigation,
-      navigateToBookmarks,
+      // navigateToBookmarks,
       title,
     } = this.props;
 
@@ -51,7 +52,7 @@ export default class Header extends React.PureComponent {
           <TouchableOpacity
             activeOpacity={.8}
             hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-            onPress={navigateToBookmarks}
+            onPress={this.handleNavigateToBookmarks}
             style={styles.bookmark}
           >
             <Aicon name={'bookmark'} style={styles.bookmarkIcon} />
@@ -75,6 +76,14 @@ export default class Header extends React.PureComponent {
 
   handleBack() {
     this.props.navigation.goBack();
+  }
+
+  handleNavigateToBookmarks() {
+    if (this.props.navigateToBookmarks) {
+      this.props.navigateToBookmarks();
+    } else {
+      this.props.navigation.navigate('Habits', { bookmarks: true });
+    }
   }
 
   handleMenu() {
