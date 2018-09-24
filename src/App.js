@@ -1005,7 +1005,6 @@ export default class App extends React.Component {
   }
 
   passNavigationContext(context) {
-    console.log('pass nav ctx')
     if (!this.state.navigation) {
       this.setState({ navigation: context });
     }
