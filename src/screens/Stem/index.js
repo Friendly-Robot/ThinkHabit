@@ -27,7 +27,7 @@ export default class Stem extends React.PureComponent {
     this.updatedReflections;
     this.updatedFavorite;
     this.valueStore;
-    this.vs130 = verticalScale(60);
+    this.vs130 = verticalScale(130);
     Voice.onSpeechResults = this.onSpeechResults.bind(this);
     Voice.onSpeechPartialResults = this.onSpeechPartialResults.bind(this);
     this.state = {
@@ -178,31 +178,35 @@ export default class Stem extends React.PureComponent {
             </Swiper>
           )
         }
-        <View style={[styles.bottomView, keyboardShowing ? { flex: 1 } : { height: this.vs60 }]}>
-
-          <AutoGrowingTextInput
-            keyboardType={'default'}
-            onChangeText={this.handleInput}
-            minHeight={45}
-            ref={ref => this.input = ref}
-            returnKeyType='done'
-            scrollEnabled={true}
-            selectionColor={'#FF9900'}
-            style={[styles.input, Platform.OS === 'ios' && keyboardShowing && styles.iosInput]}
-            underlineColorAndroid={[keyboardShowing ? colors.primary : '#FFFFFF']}
-            value={value}
-          />
+        <View style={[styles.bottomView, keyboardShowing ? { flex: 1 } : { height: this.vs130 }]}>
+          {
+            keyboardShowing &&
+            <AutoGrowingTextInput
+              keyboardType={'default'}
+              onChangeText={this.handleInput}
+              minHeight={45}
+              ref={ref => this.input = ref}
+              returnKeyType='done'
+              scrollEnabled={true}
+              selectionColor={'#FF9900'}
+              style={[styles.input, Platform.OS === 'ios' && keyboardShowing && styles.iosInput]}
+              underlineColorAndroid={[keyboardShowing ? colors.primary : '#FFFFFF']}
+              value={value}
+            />
+          }
 
           <TouchableOpacity
             activeOpacity={.8}
             onPress={() => this._startRecognizing()}
             style={[styles.button, styles.voiceButton, premium && { backgroundColor: colors.primary }]}
           >
-            <Aicon name={'microphone'} style={styles.buttonIcon} />
+            {
+              recording ?
+              <Micon name={'voice'} style={styles.voice} />
+              :
+              <Aicon name={'microphone'} style={styles.buttonIcon} />
+            }
           </TouchableOpacity>
-          {
-            recording && <Micon name={'voice'} style={styles.voice} />
-          }
           <TouchableOpacity
             activeOpacity={.8}
             onPress={this.handleAdd}
@@ -267,12 +271,13 @@ export default class Stem extends React.PureComponent {
   }
 
   _keyboardDidShow() {
-    this.setState({ keyboardShowing: true })
+    this.setState({ keyboardShowing: true }, () => {
+      this.input.focus();
+    });
   }
 
   _keyboardDidHide() {
     this.setState({ keyboardShowing: false })
-    this.input.blur();
   }
 
   handleAdd() {
@@ -309,9 +314,11 @@ export default class Stem extends React.PureComponent {
       if (this.valueStore) this.valueStore = '';
     } else {
       if (this.state.keyboardShowing) {
-        this.input.blur();
+        this.setState({ keyboardShowing: false });
       } else {
-        this.input.focus();
+        this.setState({ keyboardShowing: true }, () => {
+          this.input.focus();
+        });
       }
     }
     if (this.state.recording) {
@@ -622,11 +629,8 @@ const styles = ScaledSheet.create({
     marginBottom: '10@vs',
   },
   voice: {
-    bottom: '15@vs',
-    color: colors.primary,
+    color: '#FFFFFF',
     fontSize: fonts.medium,
-    left: '60@ms',
-    position: 'absolute',
   },
   voiceButton: {
     backgroundColor: colors.grey,
