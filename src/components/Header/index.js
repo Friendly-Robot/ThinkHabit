@@ -16,12 +16,15 @@ export default class Header extends React.PureComponent {
     this.handleHome = this.handleHome.bind(this);
     this.handleMenu = this.handleMenu.bind(this);
   }
+
   render() {
     const { 
       backArrow,
       // navigation,
+      navigateToBookmarks,
       title,
     } = this.props;
+
     return (
       <View style={styles.container}>
         { 
@@ -41,16 +44,19 @@ export default class Header extends React.PureComponent {
           onPress={this.handleHome}
           style={[styles.titleContainer, backArrow && styles.backTitle]}
         >
-          <Text style={styles.title}>{ title ? title : 'Think Habit' }</Text>
+          <Text style={styles.title}>{ title }</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={.8}
-          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-          onPress={() => {}}
-          style={styles.bookmark}
-        >
-          <Aicon name={'bookmark'} style={styles.bookmarkIcon} />
-        </TouchableOpacity>
+        {
+          title === 'Think Habit' &&
+          <TouchableOpacity
+            activeOpacity={.8}
+            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            onPress={navigateToBookmarks}
+            style={styles.bookmark}
+          >
+            <Aicon name={'bookmark'} style={styles.bookmarkIcon} />
+          </TouchableOpacity>
+        }
         <TouchableOpacity
           activeOpacity={.8}
           hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
