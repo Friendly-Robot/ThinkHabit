@@ -33,7 +33,7 @@ export default class Habits extends React.PureComponent {
     this.state = {
       displaySettings: false,
       habitSeq: [...props.habitSeq],
-      index: 0,
+      index: 1,
       inProgress: props.currHabit === props.habitSeq[0],
       repeat: props.repeat,
       save: false,
@@ -65,7 +65,7 @@ export default class Habits extends React.PureComponent {
       // currHabit,
       // habitSeq,
       navigation,
-      premium,
+      // premium,
       queue,
       removeFromQueue,
       // repeat,
@@ -113,7 +113,7 @@ export default class Habits extends React.PureComponent {
                 <Aicon name={'chevron-down'} style={styles.caret} />
               }
             </TouchableOpacity>
-            <Text style={styles.habit}>{ index === 6 ? 'Bookmarks' : habitSeq[index] }</Text>
+            <Text style={styles.habit}>{ index === 0 ? 'Bookmarks' : habitSeq[index - 1] }</Text>
             {
               displaySettings ?
               <TouchableOpacity
@@ -646,10 +646,10 @@ export default class Habits extends React.PureComponent {
         </Animated.View>
         <Swiper
           horizontal={true}
-          index={0}
+          index={1}
           loadMinimal={Platform.OS === 'ios' ? false : true}
           loadMinimalSize={1}
-          loop={true}
+          loop={Platform.OS === 'ios' ? false : true}
           onMomentumScrollEnd={this.handleSwiperUpdate}
           ref={(ref) => this.swiper = ref}
           removeClippedSubviews={Platform.OS === 'ios' ? false : true}
@@ -657,7 +657,7 @@ export default class Habits extends React.PureComponent {
           showsPagination={false}
         >
           {
-            [...habitSeq, 'Bookmarks'].map((habit) => (
+            ['Bookmarks', ...habitSeq].map((habit) => (
               <Habit
                 addToQueue={addToQueue}
                 removeFromQueue={removeFromQueue}
@@ -688,11 +688,14 @@ export default class Habits extends React.PureComponent {
         habitSeq: [...nextProps.habitSeq],
         inProgress: nextProps.currHabit === nextProps.habitSeq[index],
       }, () => {
-        this.scrollToIndex0();
+        this.scrollToIndex1();
       });
     }
     if (this.props.repeat !== nextProps.repeat) {
       this.setState({ repeat: nextProps.repeat });
+    }
+    if (nextProps.navigation.state.params && nextProps.navigation.state.params.bookmarks) {
+      this.navigateToBookmarks();
     }
   }
 
@@ -1024,27 +1027,29 @@ export default class Habits extends React.PureComponent {
     });
   }
 
-  scrollToIndex0() {
+  scrollToIndex1() {
     const { index } = this.swiper.state;
     switch (index) {
       case 0:
-        return;
+        this.swiper.scrollBy(1);
       case 1:
-        this.swiper.scrollBy(-1);
+        return;
       case 2:
-        this.swiper.scrollBy(-2);
+        this.swiper.scrollBy(-1);
       case 3:
-        this.swiper.scrollBy(-3);
+        this.swiper.scrollBy(-2);
       case 4:
-        this.swiper.scrollBy(-4);
+        this.swiper.scrollBy(-3);
       case 5:
-        this.swiper.scrollBy(-5, false);
+        this.swiper.scrollBy(-4);
+      case 6:
+        this.swiper.scrollBy(-5);
     }
   }
 
   scrollRight() {
     if (this.swiper.state.index === 6) {
-      this.swiper.scrollBy(-6);
+      this.swiper.scrollBy(-6, false);
     } else {
       this.swiper.scrollBy(1);
     }
@@ -1054,17 +1059,19 @@ export default class Habits extends React.PureComponent {
     const { index } = this.swiper.state;
     switch (index) {
       case 0:
-        this.swiper.scrollBy(6);
+        return
       case 1:
-        this.swiper.scrollBy(5);
+        this.swiper.scrollBy(-1);
       case 2:
-        this.swiper.scrollBy(4);
+        this.swiper.scrollBy(-2);
       case 3:
-        this.swiper.scrollBy(3);
+        this.swiper.scrollBy(-3);
       case 4:
-        this.swiper.scrollBy(2);
+        this.swiper.scrollBy(-4);
       case 5:
-        this.swiper.scrollBy(1);
+        this.swiper.scrollBy(-5);
+      case 6:
+        this.swiper.scrollBy(-6);
     }
   }
 
@@ -1377,6 +1384,7 @@ const stemStyles = ScaledSheet.create({
     justifyContent: 'space-between',
     marginBottom: '25@vs',
     padding: '15@ms',
+    paddingRight: '30@ms',
     width: '90%',
   },
   dot: {
