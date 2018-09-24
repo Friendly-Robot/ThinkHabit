@@ -22,6 +22,9 @@ export default class SplashScreen extends React.PureComponent {
       const { appSet } = nextProps;
       this.navigationAction = setTimeout(() => {
         // Prevent normal routing if app was opened from notification.
+        // This prevents rendering on iOS for some reason.
+        // Perhaps due to speed of rendering app during dev phase?
+        // TODO Check if this affects regular rendering of notifications on iOS.
         if (this.props.notification && Platform.OS !== 'ios') return;
 
         if (appSet) {
