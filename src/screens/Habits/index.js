@@ -1256,13 +1256,15 @@ class StemCard extends React.PureComponent {
   }
 
   updateStemInRealm(stem, favorite) {
-    Realm.open({schema: Schema, schemaVersion: 0})
-    .then(realm => {
-      realm.write(() => {
-        stem['favorite'] = favorite;
-        this.setState({ realmStem: { ...this.state.realmStem, favorite } });
+    setTimeout(() => {
+      Realm.open({schema: Schema, schemaVersion: 0})
+      .then(realm => {
+        realm.write(() => {
+          stem['favorite'] = favorite;
+          this.setState({ realmStem: { ...this.state.realmStem, favorite } });
+        });
       });
-    });
+    }, 1500);
   }
 
   createNewStemInRealm(stem, favorite, habit) {

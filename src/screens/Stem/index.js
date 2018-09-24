@@ -518,9 +518,7 @@ export default class Stem extends React.PureComponent {
     this.updatedReflections = false;
     this.updatedThoughts = false;
     this.updatedFavorite = false;
-    setTimeout(() => {
-      this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
-    }, 1000);
+    this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
   }
 }
 
