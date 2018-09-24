@@ -31,6 +31,7 @@ export default class Habits extends React.PureComponent {
     this.swiper;
     this.state = {
       displaySettings: false,
+      habitSeq: [...props.habitSeq],
       index: 0,
       inProgress: props.currHabit === props.habitSeq[0],
       numberOfStemsPerDay: props.numberOfStemsPerDay,
@@ -41,6 +42,7 @@ export default class Habits extends React.PureComponent {
       TNT: {},
       TND: {},
     }
+    this.navigateToBookmarks = this.navigateToBookmarks.bind(this);
     this.navigateToStem = this.navigateToStem.bind(this);
     this.toggleSettings = this.toggleSettings.bind(this);
     this.toggleProgress = this.toggleProgress.bind(this);
@@ -63,9 +65,10 @@ export default class Habits extends React.PureComponent {
       // Courage,
       // Freedom,
       // currHabit,
-      habitSeq,
+      // habitSeq,
       navigation,
       // numberOfStemsPerDay,
+      premium,
       queue,
       removeFromQueue,
       // repeat,
@@ -78,6 +81,7 @@ export default class Habits extends React.PureComponent {
 
     const {
       displaySettings,
+      habitSeq,
       index,
       inProgress,
       numberOfStemsPerDay,
@@ -97,7 +101,7 @@ export default class Habits extends React.PureComponent {
 
     return (
       <View style={styles.mainContainer}>
-        <Header navigation={navigation} />
+        <Header navigateToBookmarks={this.navigateToBookmarks} navigation={navigation} title={'Think Habit'} />
         <Animated.View style={this.animatedHabit()}>
           <View style={styles.settingsHeader}>
             <TouchableOpacity
@@ -113,7 +117,7 @@ export default class Habits extends React.PureComponent {
                 <Aicon name={'chevron-down'} style={styles.caret} />
               }
             </TouchableOpacity>
-            <Text style={styles.habit}>{ habitSeq[index] }</Text>
+            <Text style={styles.habit}>{ index === 6 ? 'Bookmarks' : habitSeq[index] }</Text>
             {
               displaySettings ?
               <TouchableOpacity
@@ -151,7 +155,10 @@ export default class Habits extends React.PureComponent {
                     inProgress ?
                     `currently in progress`
                     :
-                    `disabled`
+                      index === 6 ?
+                      'upgrade to queue'
+                      :
+                      `disabled`
                   }
                 </Text>
               </View>
@@ -676,7 +683,7 @@ export default class Habits extends React.PureComponent {
           style={styles.swiper}
         >
           {
-            habitSeq.map((habit) => (
+            [...habitSeq, 'Bookmarks'].map((habit) => (
               <Habit
                 addToQueue={addToQueue}
                 removeFromQueue={removeFromQueue}
@@ -697,6 +704,25 @@ export default class Habits extends React.PureComponent {
     this.props.passNavigationContext(this.props.navigation);
     this.initNotificationData();
     this.initFunctions();
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.currHabit !== nextProps.currHabit) {
+      const { index } = this.state;
+      this.setState({ 
+        currHabit: nextProps.currHabit,
+        habitSeq: [...nextProps.habitSeq],
+        inProgress: nextProps.currHabit === nextProps.habitSeq[index],
+      }, () => {
+        this.scrollToIndex0();
+      });
+    }
+    if (this.props.numberOfStemsPerDay !== nextProps.numberOfStemsPerDay) {
+      this.setState({ numberOfStemsPerDay: nextProps.numberOfStemsPerDay });
+    }
+    if (this.props.repeat !== nextProps.repeat) {
+      this.setState({ repeat: nextProps.repeat });
+    }
   }
 
   initNotificationData() {
@@ -819,18 +845,14 @@ export default class Habits extends React.PureComponent {
     this.setState({ displaySettings: !displaySettings }, () => {
       if (!this.state.displaySettings && this.state.save) {
         setTimeout(() => this.initNotificationData(), 1000);
-        this.setState({
-          inProgress: this.props.currHabit === this.props.habitSeq[this.state.index],
-          numberOfStemsPerDay: this.props.numberOfStemsPerDay,
-          repeat: this.props.repeat,
-          save: false,
-        });
+        this.setState({ save: false });
       }
     });
   }
 
   toggleProgress() {
-    const { inProgress } = this.state;
+    const { index, inProgress, premium } = this.state;
+    if (index === 6 && !premium) return;
     this.setState({ inProgress: !inProgress, save: true });
   }
 
@@ -1057,11 +1079,47 @@ export default class Habits extends React.PureComponent {
     });
   }
 
+  scrollToIndex0() {
+    const { index } = this.swiper.state;
+    switch (index) {
+      case 0:
+        return;
+      case 1:
+        this.swiper.scrollBy(-1);
+      case 2:
+        this.swiper.scrollBy(-2);
+      case 3:
+        this.swiper.scrollBy(-3);
+      case 4:
+        this.swiper.scrollBy(-4);
+      case 5:
+        this.swiper.scrollBy(-5);
+    }
+  }
+
   scrollRight() {
-    if (this.swiper.state.index === 5) {
-      this.swiper.scrollBy(-5);
+    if (this.swiper.state.index === 6) {
+      this.swiper.scrollBy(-6);
     } else {
       this.swiper.scrollBy(1);
+    }
+  }
+
+  navigateToBookmarks() {
+    const { index } = this.swiper.state;
+    switch (index) {
+      case 0:
+        this.swiper.scrollBy(6);
+      case 1:
+        this.swiper.scrollBy(5);
+      case 2:
+        this.swiper.scrollBy(4);
+      case 3:
+        this.swiper.scrollBy(3);
+      case 4:
+        this.swiper.scrollBy(2);
+      case 5:
+        this.swiper.scrollBy(1);
     }
   }
 
@@ -1073,19 +1131,21 @@ export default class Habits extends React.PureComponent {
 class Habit extends React.PureComponent {
   constructor() {
     super();
+    this.state = {
+      bookmarks: null,
+    }
     this._keyExtractor = this._keyExtractor.bind(this);
     this._renderItem = this._renderItem.bind(this);
     this._getItemLayout = this._getItemLayout.bind(this);
   }
   render() {
-    const {
-      data,
-    } = this.props;
+    const { data } = this.props;
+    const { bookmarks } = this.state;
 
     return (
       <FlatList
         contentContainerStyle={stemStyles.scrollview}
-        data={data}
+        data={data ? data : bookmarks}
         getItemLayout={this._getItemLayout}
         initialNumToRender={5}
         keyExtractor={this._keyExtractor}
@@ -1093,6 +1153,16 @@ class Habit extends React.PureComponent {
         renderItem={this._renderItem}
       />
     )
+  }
+
+  componentDidMount() {
+    if (this.props.habit === 'Bookmarks') {
+      Realm.open({schema: Schema, schemaVersion: 0})
+      .then((realm) => {
+        const Bookmarks = realm.objects('Stem').filtered('favorite = $0', true);
+        this.setState({ bookmarks: Bookmarks });
+      });
+    }
   }
 
   _keyExtractor(item) {
