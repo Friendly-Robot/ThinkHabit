@@ -100,7 +100,7 @@ export default class Stem extends React.PureComponent {
 
     return (
       <View style={styles.container}>
-        <Header backArrow={true} navigation={navigation} />
+        <Header backArrow={true} navigation={navigation} title={'Think Habit'} />
         <View style={styles.stemContainer}>
           <Text style={styles.stem}>{ stem }</Text>
         </View>
