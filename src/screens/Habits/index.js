@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Animated,
   FlatList,
+  Platform,
   View,
   Text,
   TouchableOpacity,
@@ -646,12 +647,14 @@ export default class Habits extends React.PureComponent {
         <Swiper
           horizontal={true}
           index={0}
-          loadMinimal={true}
+          loadMinimal={Platform.OS === 'ios' ? false : true}
+          loadMinimalSize={1}
           loop={true}
           onMomentumScrollEnd={this.handleSwiperUpdate}
           ref={(ref) => this.swiper = ref}
+          removeClippedSubviews={Platform.OS === 'ios' ? false : true}
+          scrollEnabled={true}
           showsPagination={false}
-          style={styles.swiper}
         >
           {
             [...habitSeq, 'Bookmarks'].map((habit) => (
@@ -1035,7 +1038,7 @@ export default class Habits extends React.PureComponent {
       case 4:
         this.swiper.scrollBy(-4);
       case 5:
-        this.swiper.scrollBy(-5);
+        this.swiper.scrollBy(-5, false);
     }
   }
 
@@ -1083,7 +1086,6 @@ class Habit extends React.PureComponent {
   render() {
     const { data } = this.props;
     const { bookmarks } = this.state;
-
     return (
       <FlatList
         contentContainerStyle={stemStyles.scrollview}
@@ -1091,7 +1093,7 @@ class Habit extends React.PureComponent {
         getItemLayout={this._getItemLayout}
         initialNumToRender={5}
         keyExtractor={this._keyExtractor}
-        removeClippedSubviews={true}
+        removeClippedSubviews={false}
         renderItem={this._renderItem}
       />
     )
@@ -1522,9 +1524,6 @@ const styles = ScaledSheet.create({
     justifyContent: 'center',
     height: '65@vs',
     paddingHorizontal: '15@ms',
-  },
-  swiper: {
-    flex:  1,
   },
   timeButton: {
     alignItems: 'center',
