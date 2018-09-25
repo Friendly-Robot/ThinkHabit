@@ -294,7 +294,7 @@ export default class App extends React.Component {
   }
   
   initializeApp() {
-    Realm.clearTestState();
+    // Realm.clearTestState();
     Realm.open({schema: Schema, schemaVersion: 0})
     .then((realm) => {
       const Settings = realm.objects('Settings')[0];
@@ -441,10 +441,10 @@ export default class App extends React.Component {
 
   checkToQueueNotifications() {
     if (this.onNotification) return;
-    const queueItem = Settings['queue'][0];
     const { Settings } = this.state;
+    const queueItem = Settings['queue'][0];
     const now = Date.now();
-    if (queueItem['date'] > now) {
+    if (queueItem && queueItem['date'] > now) {
       return;
     } else {
       // The app was opened after a passed notification so replenish the queue.
