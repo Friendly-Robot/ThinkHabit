@@ -42,6 +42,7 @@ export default class Habits extends React.PureComponent {
       TNT: {},
       TND: {},
     }
+    console.log('HABITS HABITSEQ', props.habitSeq)
     this.navigateToBookmarks = this.navigateToBookmarks.bind(this);
     this.navigateToStem = this.navigateToStem.bind(this);
     this.toggleSettings = this.toggleSettings.bind(this);
@@ -692,7 +693,7 @@ export default class Habits extends React.PureComponent {
       } else {
         this.setState({ 
           currHabit: nextProps.currHabit,
-          habitSeq: [...nextProps.habitSeq],
+          habitSeq: nextProps.habitSeq,
           inProgress: nextProps.currHabit ? true : false,
         }, () => {
           this.scrollToIndex1();
@@ -704,6 +705,9 @@ export default class Habits extends React.PureComponent {
     }
     if (nextProps.navigation.state.params && nextProps.navigation.state.params.bookmarks) {
       this.navigateToBookmarks();
+    }
+    if (this.props.habitSeq !== nextProps.habitSeq) {
+      this.setState({ habitSeq: nextProps.habitSeq });
     }
   }
 
