@@ -706,9 +706,6 @@ export default class Habits extends React.PureComponent {
     if (nextProps.navigation.state.params && nextProps.navigation.state.params.bookmarks) {
       this.navigateToBookmarks();
     }
-    if (this.props.habitSeq !== nextProps.habitSeq) {
-      this.setState({ habitSeq: nextProps.habitSeq });
-    }
   }
 
   initNotificationData() {
