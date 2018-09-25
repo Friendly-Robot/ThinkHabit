@@ -75,6 +75,11 @@ export default class Header extends React.PureComponent {
   }
 
   handleBack() {
+    if (this.props.subTitle === 'Stem') {
+      // Used to manually update StemCard when navigating from a notification.
+      this.props.navigation.navigate('Habits', { refresh: this.props.stemId });
+      return;
+    }
     this.props.navigation.goBack();
   }
 

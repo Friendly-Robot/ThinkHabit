@@ -47,6 +47,7 @@ export default class Habits extends React.PureComponent {
       habitSeq: [...props.habitSeq],
       index: 1,
       inProgress: props.currHabit === props.habitSeq[0],
+      refresh: null,
       repeat: props.repeat,
       save: false,
       RNT: {},
@@ -64,10 +65,10 @@ export default class Habits extends React.PureComponent {
     this.handleSettingsUpdate = this.handleSettingsUpdate.bind(this);
     this.scrollRight = this.scrollRight.bind(this);
   }
-
   render() {
     const {
       addToQueue,
+      daysInRow,
       // Confidence,
       // Meditation,
       // Relationships,
@@ -93,6 +94,7 @@ export default class Habits extends React.PureComponent {
       habitSeq,
       index,
       inProgress,
+      refresh,
       repeat,
       save,
       RNT,
@@ -106,8 +108,6 @@ export default class Habits extends React.PureComponent {
     //   completedStems: 'string[]',
     //   name: 'string',
     // } = this.props.habit;
-
-    console.log('currhaibt', this.props.currHabit, inProgress)
 
     return (
       <View style={styles.mainContainer}>
@@ -674,12 +674,14 @@ export default class Habits extends React.PureComponent {
             ['Bookmarks', ...habitSeq].map((habit) => (
               <Habit
                 addToQueue={addToQueue}
+                daysInRow={daysInRow}
                 removeFromQueue={removeFromQueue}
                 data={Data[habit]}
                 habit={habit}
                 key={habit}
                 navigateToStem={this.navigateToStem}
                 queue={queue}
+                refresh={refresh}
               />
             ))
           }
@@ -716,6 +718,14 @@ export default class Habits extends React.PureComponent {
     }
     if (nextProps.navigation.state.params && nextProps.navigation.state.params.bookmarks) {
       this.navigateToBookmarks();
+    }
+    if (nextProps.navigation.state.params && nextProps.navigation.state.params.refresh) {
+      if (this.props.navigation.state.params && this.props.navigation.state.params.refresh &&
+          this.props.navigation.state.params.refresh === nextProps.navigation.state.params.refresh) {
+          return;
+      }
+      // Manually update stem when navigating from a notification.
+      this.setState({ refresh: nextProps.navigation.state.params.refresh });
     }
   }
 
@@ -1104,7 +1114,7 @@ class Habit extends React.PureComponent {
     this._getItemLayout = this._getItemLayout.bind(this);
     this._onRefresh = this._onRefresh.bind(this);
     this._renderItem = this._renderItem.bind(this);
-    this.updateBookmarksPage = this.updateBookmarksPage.bind(this)
+    this.updateBookmarksPage = this.updateBookmarksPage.bind(this);
   }
   render() {
     const { data } = this.props;
@@ -1128,6 +1138,12 @@ class Habit extends React.PureComponent {
     this.updateBookmarksPage();
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (this.props.refresh !== nextProps.refresh) {
+      this._onRefresh('quickie');
+    }
+  }
+
   updateBookmarksPage() {
     if (this.props.habit === 'Bookmarks') {
       Realm.open({schema: Schema, schemaVersion: 0})
@@ -1138,12 +1154,18 @@ class Habit extends React.PureComponent {
     }
   }
 
-  _onRefresh() {
+  _onRefresh(quickie) {
     this.setState({ refreshing: true });
     if (this.props.habit === 'Bookmarks') {
       this.updateBookmarksPage();
+    } else {
+      this.setState({ refreshing: true });
     }
-    setTimeout(() => this.setState({ refreshing: false}), 1000);
+    if (quickie) {
+      setTimeout(() => this.setState({ refreshing: false}), 100);
+    } else {
+      setTimeout(() => this.setState({ refreshing: false}), 1000);
+    }
   }
 
   _keyExtractor(item) {
@@ -1151,14 +1173,15 @@ class Habit extends React.PureComponent {
   }
 
   _renderItem({item, index}) {
-    const { addToQueue, habit, navigateToStem, queue, removeFromQueue } = this.props;
-    const showAd = index === 2 ? true : false;
+    const { addToQueue, daysInRow, habit, navigateToStem, queue, refresh, removeFromQueue } = this.props;
+    const showAd = index === 2 && daysInRow < 3 ? true : false;
     return (
       <StemCard
         addToQueue={addToQueue}
         habit={habit}
         navigateToStem={navigateToStem}
         queue={queue}
+        refresh={refresh}
         removeFromQueue={removeFromQueue}
         showAd={showAd}
         stem={item}
@@ -1197,6 +1220,7 @@ class StemCard extends React.PureComponent {
       // habit,
       // navigateToStem,
       // queue,
+      // refresh,
       // removeFromQueue,
       showAd,
       stem,
@@ -1338,6 +1362,13 @@ class StemCard extends React.PureComponent {
 
   componentDidMount() {
     this.updateRealmStem();
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.refresh !== nextProps.refresh && nextProps.refresh === nextProps.stem.id) {
+      // Wait for Stem to update with data first...
+      setTimeout(() => this.updateRealmStem(), 1000);
+    }
   }
 
   updateRealmStem() {

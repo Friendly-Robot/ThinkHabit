@@ -16,6 +16,8 @@ import Swiper from 'react-native-swiper';
 import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
 import { verticalScale } from 'react-native-size-matters';
 import Voice from 'react-native-voice';
+import Realm from 'realm';
+import Schema from '../../config/realm';
 
 
 export default class Stem extends React.PureComponent {
@@ -33,6 +35,7 @@ export default class Stem extends React.PureComponent {
     this.state = {
       adding: false,
       dotFuncs: {},
+      exists: false,
       favorite: props.navigation.state.params && typeof props.navigation.state.params.favorite === 'boolean' ? props.navigation.state.params.favorite : false,
       keyboardShowing: false,
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
@@ -94,15 +97,23 @@ export default class Stem extends React.PureComponent {
     } = this.state;
     
     const { 
+      id,
       thinkDate,
       reflectDate,
       stem,
       // updateBookmarksPage,
+      updateRealmStem, // Spread this prop to check whether Stem was open from notification or Habits screen to force update on back press if notification.
     } = this.props.navigation.state.params;
 
     return (
       <View style={styles.container}>
-        <Header backArrow={true} navigation={navigation} title={'Think Habit'} />
+        <Header
+          backArrow={true} 
+          navigation={navigation} 
+          title={'Think Habit'} 
+          subTitle={updateRealmStem ? null : 'Stem'} 
+          stemId={id} 
+        />
         <View style={styles.stemContainer}>
           <Text style={styles.stem}>{ stem }</Text>
         </View>
@@ -244,6 +255,7 @@ export default class Stem extends React.PureComponent {
       1: () => this.handleDot(1),
     }
     this.setState({ dotFuncs });
+    this.checkExistsAndSetFavorite();
     this.mounted = true;
   }
 
@@ -356,6 +368,23 @@ export default class Stem extends React.PureComponent {
     } else if (index === 1 && this.swiper.state.index === 1) {
       return;
     }
+  }
+
+  checkExistsAndSetFavorite() {
+    const { id } = this.props.navigation.state.params;
+    Realm.open({ schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      const Stem = realm.objectForPrimaryKey('Stem', id);
+      if (Stem) {
+        if (Stem['favorite']) {
+          this.setState({ favorite: Stem['favorite'], exists: true });
+        } else {
+          this.setState({ exists: true });
+        }
+      } else {
+        this.setState({ exists: false });
+      }
+    });
   }
 
   handleFavorite() {
@@ -490,7 +519,7 @@ export default class Stem extends React.PureComponent {
     const { updateStemInRealm } = this.props;
     const { params } = this.props.navigation.state;
     const date = new Date().getTime();
-    if (typeof params['favorite'] === 'boolean') {
+    if (this.state.exists) {
       const updatedStem = {};
       if (this.updatedThoughts && this.updatedReflections) {
         updatedStem['thinkDate'] = date;
