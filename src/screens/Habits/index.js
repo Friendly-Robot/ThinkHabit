@@ -7,7 +7,7 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
-import data from '../../config/data';
+import Data from '../../config/data';
 import { colors, fonts, height } from '../../config/styles';
 import Header from '../../components/Header';
 import Swiper from 'react-native-swiper';
@@ -663,7 +663,7 @@ export default class Habits extends React.PureComponent {
               <Habit
                 addToQueue={addToQueue}
                 removeFromQueue={removeFromQueue}
-                data={data[habit]}
+                data={Data[habit]}
                 habit={habit}
                 key={habit}
                 navigateToStem={this.navigateToStem}
@@ -1086,14 +1086,17 @@ class Habit extends React.PureComponent {
     super();
     this.state = {
       bookmarks: null,
+      refreshing: false,
     }
     this._keyExtractor = this._keyExtractor.bind(this);
-    this._renderItem = this._renderItem.bind(this);
     this._getItemLayout = this._getItemLayout.bind(this);
+    this._onRefresh = this._onRefresh.bind(this);
+    this._renderItem = this._renderItem.bind(this);
+    this.updateBookmarksPage = this.updateBookmarksPage.bind(this)
   }
   render() {
     const { data } = this.props;
-    const { bookmarks } = this.state;
+    const { bookmarks, refreshing } = this.state;
     return (
       <FlatList
         contentContainerStyle={stemStyles.scrollview}
@@ -1101,6 +1104,8 @@ class Habit extends React.PureComponent {
         getItemLayout={this._getItemLayout}
         initialNumToRender={5}
         keyExtractor={this._keyExtractor}
+        onRefresh={this._onRefresh}
+        refreshing={refreshing}
         removeClippedSubviews={false}
         renderItem={this._renderItem}
       />
@@ -1108,6 +1113,10 @@ class Habit extends React.PureComponent {
   }
 
   componentDidMount() {
+    this.updateBookmarksPage();
+  }
+
+  updateBookmarksPage() {
     if (this.props.habit === 'Bookmarks') {
       Realm.open({schema: Schema, schemaVersion: 0})
       .then((realm) => {
@@ -1117,12 +1126,26 @@ class Habit extends React.PureComponent {
     }
   }
 
+  _onRefresh() {
+    this.setState({ refreshing: true });
+    if (this.props.habit === 'Bookmarks') {
+      this.updateBookmarksPage();
+    }
+    setTimeout(() => this.setState({ refreshing: false}), 1000);
+  }
+
   _keyExtractor(item) {
     return item.id;
   }
 
   _renderItem({item}) {
-    const { addToQueue, habit, navigateToStem, queue, removeFromQueue } = this.props;
+    const { 
+      addToQueue,
+      habit,
+      navigateToStem,
+      queue,
+      removeFromQueue,
+    } = this.props;
     return (
       <StemCard
         addToQueue={addToQueue}
@@ -1131,6 +1154,7 @@ class Habit extends React.PureComponent {
         queue={queue}
         removeFromQueue={removeFromQueue}
         stem={item}
+        updateBookmarksPage={this.updateBookmarksPage}
       />
     )
   }
@@ -1166,6 +1190,7 @@ class StemCard extends React.PureComponent {
       // queue,
       // removeFromQueue,
       stem,
+      // updateBookmarksPage,
     } = this.props;
     const { favorite, inQueue, realmStem } = this.state;
     
@@ -1253,6 +1278,7 @@ class StemCard extends React.PureComponent {
       this.createNewStemInRealm(stem, !favorite, habit);
     }
     this.setState({ favorite: !favorite });
+    this.props.updateBookmarksPage();
   }
 
   updateStemInRealm(stem, favorite) {
@@ -1288,17 +1314,17 @@ class StemCard extends React.PureComponent {
   }
   
   handleThink() {
-    const { habit, navigateToStem, stem } = this.props;
+    const { habit, navigateToStem, stem, updateBookmarksPage } = this.props;
     const { realmStem } = this.state;
     let params = {};
     if (Object.keys(realmStem).length) {
       if (realmStem['thoughts'].length && realmStem['reflections'].length === 0) {
-        params = { reflection: true, ...realmStem, updateRealmStem: this.updateRealmStem };
+        params = { reflection: true, ...realmStem, updateRealmStem: this.updateRealmStem, updateBookmarksPage };
       } else {
-        params = { ...realmStem, updateRealmStem: this.updateRealmStem };
+        params = { ...realmStem, updateRealmStem: this.updateRealmStem, updateBookmarksPage };
       }
     } else {
-      params = { habit, ...stem, updateRealmStem: this.updateRealmStem };
+      params = { habit, ...stem, updateRealmStem: this.updateRealmStem, updateBookmarksPage };
     }
     navigateToStem(params);
   }

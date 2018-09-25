@@ -97,6 +97,7 @@ export default class Stem extends React.PureComponent {
       thinkDate,
       reflectDate,
       stem,
+      // updateBookmarksPage,
     } = this.props.navigation.state.params;
 
     return (
@@ -361,6 +362,7 @@ export default class Stem extends React.PureComponent {
     const { favorite } = this.state;
     this.setState({ favorite: !favorite });
     this.updatedFavorite = true;
+    this.props.navigation.state.params && this.props.navigation.state.params.updateBookmarksPage && this.props.navigation.state.params.updateBookmarksPage();
   }
 
   handleSwiperUpdate() {
