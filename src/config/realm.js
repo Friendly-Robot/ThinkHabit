@@ -16,6 +16,7 @@ class QueueItem extends Realm.Object {};
 QueueItem.schema = {
   name: 'QueueItem',
   properties: {
+    date: 'int',
     notified: 'int',
     id: 'string',
     stem: 'string',
