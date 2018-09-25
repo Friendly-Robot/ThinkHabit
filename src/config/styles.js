@@ -4,7 +4,7 @@ import { moderateScale } from 'react-native-size-matters';
 export const { height, width } = Dimensions.get('window');
 
 export const colors = {
-  primary: '#1568A1',
+  primary: '#0077B5',
   darkGrey: '#545454',
   grey: '#d3d3d3',
   lightGrey: '#FAFAFA',
