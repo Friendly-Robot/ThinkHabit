@@ -290,16 +290,17 @@ export default class App extends React.Component {
 
   componentDidMount() {
     this.initializeApp();
-    setTimeout(() => this.setNextPushNotification(), 1000);
+    // setTimeout(() => this.setNextPushNotification(), 1000);
   }
-
+  
   initializeApp() {
-    // Realm.clearTestState();
+    Realm.clearTestState();
     Realm.open({schema: Schema, schemaVersion: 0})
     .then((realm) => {
       const Settings = realm.objects('Settings')[0];
       if (Settings) {
         this.restoreEnvironment();
+        setTimeout(() => this.checkToQueueNotifications(), 1000);
       } else {
         this.buildEnvironment();
       }
@@ -438,6 +439,19 @@ export default class App extends React.Component {
     });
   }
 
+  checkToQueueNotifications() {
+    if (this.onNotification) return;
+    const queueItem = Settings['queue'][0];
+    const { Settings } = this.state;
+    const now = Date.now();
+    if (queueItem['date'] > now) {
+      return;
+    } else {
+      // The app was opened after a passed notification so replenish the queue.
+      this.setNextPushNotification();
+    }
+  }
+
   checkOnNotificationAndRender() {
     if (this.onNotification && this.notificationAttempt < 4) {
       if (this.state.navigation) {
@@ -502,6 +516,7 @@ export default class App extends React.Component {
     if (!queuedStem) {
       // Example Queue object:
       // {
+      //   date: 'int',
       //   notified: 'int',
       //   id: 'string',
       //   stem: 'string',
@@ -556,6 +571,7 @@ export default class App extends React.Component {
     } else {
       PushNotification.cancelAllLocalNotifications();
       queuedNotification = {
+        date: 0,
         notified: 1,
         id: queuedStem['id'],
         stem: queuedStem['stem'],
@@ -789,8 +805,16 @@ export default class App extends React.Component {
     console.log('millisecondsTillNextNotification', millisecondsTillNextNotification)
 
     const dateOfNotification = new Date(Date.now() + millisecondsTillNextNotification);
+    const queueItemDate = dateOfNotification.getTime();
 
     console.log('date of notification', dateOfNotification)
+
+    Realm.open({schema: Schema, schemaVersion: 0})
+    .then(realm => {
+      realm.write(() => {
+        Settings['queue'][0]['date'] = queueItemDate;
+      });
+    });
 
     if (type === 'reflect') {
       notification['reflection'] = true;
@@ -898,6 +922,7 @@ export default class App extends React.Component {
       id = Data[currHabit][randomThought]['id'];
       if (currStem !== id) {
         stem = {
+          date: 0,
           notified: 0,
           id,
           stem: Data[currHabit][randomThought]['stem'],
@@ -925,6 +950,7 @@ export default class App extends React.Component {
     }
     let id = Data[currHabit][nextIndex]['id'];
     const stem = {
+      date: 0,
       notified: 0,
       id,
       stem: Data[currHabit][nextIndex]['stem'],
@@ -944,8 +970,15 @@ export default class App extends React.Component {
           random = Math.floor(Math.random() * Bookmarks.length);
         }
       }
+      const queueItem = {
+        date: 0,
+        notified: 0,
+        id: Bookmarks[random]['id'],
+        stem: Bookmarks[random]['stem'],
+        habit: Bookmarks[random]['habit'],
+      };
       this.updateCurrStem(Bookmarks[random]['id']);
-      return [Bookmarks[random]];
+      return [queueItem];
     });
   }
 
@@ -961,23 +994,16 @@ export default class App extends React.Component {
   }
 
   toggleHabitProgress(habit) {
-    const updatedState = {...this.state};
-    const habitSeq = updatedState.Settings.habitSeq;
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       const Settings = realm.objects('Settings')[0];
+      const habitSeq = Settings['habitSeq'];
       realm.write(() => {
         habitSeq.splice(habitSeq.indexOf(habit), 1);
         habitSeq.unshift(habit);
-        updatedState['Settings']['habitSeq'] = habitSeq;
-        updatedState['Settings']['currHabit'] = habit;
-        this.setState({...updatedState})
         Settings['currHabit'] = habit;
-        Settings['habitSeq'] = habitSeq;
-        if (!habit) {
-          Settings['queue'] = [];
-          PushNotification.cancelAllLocalNotifications();
-        }
+        this.setState({ Settings });
+        setTimeout(() => this.setNextPushNotification(), 1000);
       });
     });
   }
@@ -987,6 +1013,11 @@ export default class App extends React.Component {
     .then(realm => {
       const Settings = realm.objects('Settings')[0];
       realm.write(() => {
+        if (Settings['currHabit'] !== object['currHabit']) {
+          setTimeout(() => this.setNextPushNotification(), 1000);
+        } else if (object['currHabit'] === '') {
+          PushNotification.cancelAllLocalNotifications();
+        }
         Settings['currHabit'] = object['currHabit'];
         Settings['habitSeq'] = object['habitSeq'];
         Settings['repeat'] = object['repeat'];
