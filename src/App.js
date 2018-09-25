@@ -58,6 +58,7 @@ const HabitsNavigator = createStackNavigator({
       return (
         <Stem
           navigation={props.navigation}
+          passcode={props.screenProps.Settings.passcode}
           premium={props.screenProps.Settings.premium}
           updateStemInRealm={props.screenProps.updateStemInRealm}
         />
@@ -86,6 +87,7 @@ const AppNavigator = createDrawerNavigator({
         <Settings 
           name={props.screenProps.Settings.name}
           navigation={props.navigation}
+          passcode={props.screenProps.Settings.passcode}
           picture={props.screenProps.Settings.picture}
           premium={props.screenProps.Settings.premium}
           rated={props.screenProps.Settings.rated}
@@ -396,6 +398,7 @@ export default class App extends React.Component {
           habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
           joinDate, 
           name: '', 
+          passcode: '',
           picture: '',
           premium: false,
           queue: [],
@@ -420,6 +423,7 @@ export default class App extends React.Component {
         habitSeq: ['Confidence', 'Meditation', 'Relationships', 'Responsibility', 'Courage', 'Freedom'],
         joinDate,
         name: '',
+        passcode: '',
         picture: '',
         premium: false, // TODO Check IAP if purchase history found somehow?
         queue: [],
@@ -1083,15 +1087,20 @@ export default class App extends React.Component {
   }
 
   updateSettings(settings) {
-    const { Settings } = this.state;
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
+      const Settings = realm.objects('Settings')[0];
       realm.write(() => {
         if (Settings['name'] !== settings['name']) Settings['name'] = settings['name'];
+        if (Settings['passcode'] !== settings['passcode']) Settings['passcode'] = settings['passcode'];
         if (Settings['picture'] !== settings['picture']) Settings['picture'] = settings['picture'];
         if (Settings['premium'] !== settings['premium']) Settings['premium'] = settings['premium'];
         if (Settings['rated'] !== settings['rated']) Settings['rated'] = settings['rated'];
-        if (Settings['sound'] !== settings['sound']) Settings['sound'] = settings['sound'];
+        if (Settings['sound'] !== settings['sound']) {
+          Settings['sound'] = settings['sound'];
+          setTimeout(() => this.setNextPushNotification(), 500);
+        }
+        this.setState({ Settings });
       });
     });
   }

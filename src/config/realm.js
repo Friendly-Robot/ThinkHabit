@@ -52,6 +52,7 @@ Settings.schema = {
     habitSeq: 'string[]',
     joinDate: 'int',
     name: 'string?',
+    passcode: 'string?',
     picture: 'string?',
     premium: 'bool',
     queue: { type: 'list', objectType: 'QueueItem' },

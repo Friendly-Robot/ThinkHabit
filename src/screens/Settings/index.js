@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
+import Lockscreen from '../../components/Lockscreen';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Communications from 'react-native-communications';
 import ImagePicker from 'react-native-image-picker';
@@ -31,17 +32,22 @@ export default class Settings extends React.PureComponent {
     super(props);
     this.updateSettings;
     this.state = {
+      lockscreen: false,
       name: props.name,
+      passcode: props.passcode,
       picture: props.picture,
       premium: props.premium,
       products: null,
       rated: props.rated,
       sound: props.sound,
     }
+    this.closeLockscreen = this.closeLockscreen.bind(this);
     this.handleContribution = this.handleContribution.bind(this);
     this.handleImageSelection = this.handleImageSelection.bind(this);
     this.handleNameInput = this.handleNameInput.bind(this);
+    this.handlePasscode = this.handlePasscode.bind(this);
     this.handleRating = this.handleRating.bind(this);
+    this.handleSetPasscode = this.handleSetPasscode.bind(this);
     this.handleUpgrade = this.handleUpgrade.bind(this);
     this.toggleSound = this.toggleSound.bind(this);
   }
@@ -50,6 +56,7 @@ export default class Settings extends React.PureComponent {
     const {
       // name,
       navigation,
+      // passcode,
       // picture,
       // premium,
       // rated,
@@ -58,7 +65,9 @@ export default class Settings extends React.PureComponent {
     } = this.props;
     
     const { 
+      lockscreen,
       name,
+      passcode,
       picture,
       premium,
       rated,
@@ -111,6 +120,24 @@ export default class Settings extends React.PureComponent {
             value={sound}
           />
         </View>
+        <View style={styles.setting}>
+          <Text style={styles.settingText}>Require passcode once</Text>
+          <Switch
+            onTintColor={colors.primary}
+            onValueChange={this.toggleSound}
+            thumbTintColor={colors.grey}
+            tintColor={colors.darkGrey}
+            value={sound}
+          />
+        </View>
+        <TouchableOpacity
+          activeOpacity={.8}
+          onPress={this.handlePasscode}
+          style={styles.setting}
+        >
+          <Text style={styles.settingText}>{ passcode ? 'Change passcode' : 'Setup passcode' }</Text>
+          <Aicon name={'lock'} style={styles.settingIcon} />
+        </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={.8}
           onPress={this.handleRating}
@@ -142,6 +169,15 @@ export default class Settings extends React.PureComponent {
               <Text style={styles.upgradeText}>Upgrade</Text>
             </TouchableOpacity>
           </View>
+        }
+        { 
+          lockscreen && 
+          <Lockscreen 
+            closeLockscreen={this.closeLockscreen}
+            handleUnlock={this.handleSetPasscode}
+            message={passcode ? 'Enter current passcode' : 'Setup passcode'}
+            passcode={passcode}  
+          />
         }
       </ScrollView>
     )
@@ -209,6 +245,19 @@ export default class Settings extends React.PureComponent {
   toggleSound() {
     const { sound } = this.state;
     this.setState({ sound: !sound });
+    this.updateSettings = true;
+  }
+
+  closeLockscreen() {
+    this.setState({ lockscreen: false });
+  }
+
+  handlePasscode() {
+    this.setState({ lockscreen: true });
+  }
+
+  handleSetPasscode(passcode) {
+    this.setState({ lockscreen: false, passcode });
     this.updateSettings = true;
   }
 
