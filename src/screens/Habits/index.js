@@ -21,13 +21,11 @@ import {
   // PublisherBanner,
   // AdMobRewarded,
 } from 'react-native-admob'
-const AndroidAppId = 'ca-app-pub-6795803926768626~8363743121';
 const AndroidBannerId = 'ca-app-pub-6795803926768626/4542658436';
+const AppleBannerId = 'ca-app-pub-6795803926768626/3608850712';
 
 const AdmobBannerTestUnitId = 'ca-app-pub-3940256099942544/6300978111';
 
-const AppleAppId = 'ca-app-pub-6795803926768626~7116194345';
-const AppleBannerId = 'ca-app-pub-6795803926768626/3608850712';
 
 
 
@@ -663,7 +661,7 @@ export default class Habits extends React.PureComponent {
         <Swiper
           horizontal={true}
           index={1}
-          loadMinimal={Platform.OS === 'ios' ? false : true}
+          loadMinimal={true}
           loadMinimalSize={1}
           loop={Platform.OS === 'ios' ? false : true}
           onMomentumScrollEnd={this.handleSwiperUpdate}
@@ -1210,21 +1208,18 @@ class StemCard extends React.PureComponent {
     if (showAd) {
       return (
         <View style={stemStyles.bannerStem}>
+
           <AdMobBanner
-            adSize="fullBanner"
+            adSize={"banner"}
             adUnitID={AdmobBannerTestUnitId}
+            // TODO Set to Platform specific ad units for production
             style={stemStyles.banner}
             // testDevices={[AdMobBanner.simulatorId]}
             onAdLoaded={() => this.setState({ adLoaded: true })}
-            onAdFailedToLoad={error => console.error(error)}
+            // onAdFailedToLoad={error => console.error(error)}
           />
 
-          {
-            !adLoaded &&            
-            <View style={[stemStyles.container, stemStyles.bannerLoader]}>
-              <Text>{`                                                                               `}</Text>
-            </View>
-          }
+          { !adLoaded && <View style={stemStyles.bannerLoader}/> }
 
           <View style={[stemStyles.container, { width: '100%' }]}>
             <TouchableOpacity
@@ -1446,9 +1441,9 @@ const stemStyles = ScaledSheet.create({
     marginBottom: '25@vs',
   },
   bannerLoader: {
-    // alignSelf: 'stretch',
-    backgroundColor: colors.grey,
-    width: '100%',
+    height: 50,
+    marginBottom: '25@vs',
+    width: 320,
   },
   bannerStem: {
     alignItems: 'center',
