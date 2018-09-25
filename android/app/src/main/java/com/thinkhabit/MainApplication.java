@@ -11,7 +11,6 @@ import com.imagepicker.ImagePickerPackage;
 import com.wix.autogrowtextinput.AutoGrowTextInputPackage;
 import com.oblador.vectoricons.VectorIconsPackage;
 import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;
-import com.github.xinthink.rnmk.ReactMaterialKitPackage;
 import io.realm.react.RealmReactPackage;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
@@ -40,7 +39,6 @@ public class MainApplication extends Application implements ReactApplication {
             new AutoGrowTextInputPackage(),
             new VectorIconsPackage(),
             new ReactNativePushNotificationPackage(),
-            new ReactMaterialKitPackage(),
             new RealmReactPackage()
       );
     }
