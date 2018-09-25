@@ -29,6 +29,7 @@ const HabitsNavigator = createStackNavigator({
         <Habits
           addToQueue={props.screenProps.addToQueue}
           appSet={props.screenProps.appSet}
+          daysInRow={props.screenProps.Settings.daysInRow}
           Confidence={props.screenProps.Confidence}
           Meditation={props.screenProps.Meditation}
           Relationships={props.screenProps.Relationships}
@@ -854,7 +855,8 @@ export default class App extends React.Component {
       repeatTime: 86400000,
       // actions: '["Later", "Think"]',  // (Android only) See the doc for notification actions to know more
 
-      date: dateOfNotification, //new Date(Date.now() + 10000),
+      date: dateOfNotification, 
+      // date: new Date(Date.now() + 1000),
     });
   }
 
