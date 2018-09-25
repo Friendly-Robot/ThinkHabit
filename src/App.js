@@ -158,7 +158,7 @@ const AppNavigator = createDrawerNavigator({
         return (
           <Selection 
             navigation={props.navigation} 
-            toggleHabitProgress={props.screenProps.toggleHabitProgress}
+            setHabitProgress={props.screenProps.setHabitProgress}
           />
         )
       }
@@ -194,7 +194,7 @@ export default class App extends React.Component {
     this.checkOnNotificationAndRender = this.checkOnNotificationAndRender.bind(this);
     this.passNavigationContext = this.passNavigationContext.bind(this);
     this.removeFromQueue = this.removeFromQueue.bind(this);    
-    this.toggleHabitProgress = this.toggleHabitProgress.bind(this);
+    this.setHabitProgress = this.setHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
     this.updateSettings = this.updateSettings.bind(this);
     this.updateStemInRealm = this.updateStemInRealm.bind(this);
@@ -279,7 +279,7 @@ export default class App extends React.Component {
           checkOnNotificationAndRender: this.checkOnNotificationAndRender,
           passNavigationContext: this.passNavigationContext,
           removeFromQueue: this.removeFromQueue,
-          toggleHabitProgress: this.toggleHabitProgress,
+          setHabitProgress: this.setHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
           updateSettings: this.updateSettings,
           updateStemInRealm: this.updateStemInRealm,
@@ -993,7 +993,7 @@ export default class App extends React.Component {
     });
   }
 
-  toggleHabitProgress(habit) {
+  setHabitProgress(habit) {
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       const Settings = realm.objects('Settings')[0];

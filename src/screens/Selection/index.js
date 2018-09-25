@@ -23,7 +23,7 @@ export default class Selection extends React.PureComponent {
     const { habitSelected } = this.state;
     // const { 
     //   navigation,
-    //   toggleHabitProgress,
+    //   setHabitProgress,
     // } = this.props;
 
     return (
@@ -169,9 +169,9 @@ export default class Selection extends React.PureComponent {
 
   handleStart() {
     const { habitSelected } = this.state;
-    const { navigation, toggleHabitProgress } = this.props;
+    const { navigation, setHabitProgress } = this.props;
     if (habitSelected.length === 0) return;
-    toggleHabitProgress(habitSelected);
+    setHabitProgress(habitSelected);
     const resetAction = StackActions.reset({
       index: 0,
       actions: [
