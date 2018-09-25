@@ -27,6 +27,12 @@
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:theme="@style/AppTheme">
+
+        <!-- AdMob App ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-6795803926768626~8363743121"/>
+
         <meta-data  android:name="com.dieam.reactnativepushnotification.notification_channel_name"
                 android:value="YOUR NOTIFICATION CHANNEL NAME"/>
         <meta-data  android:name="com.dieam.reactnativepushnotification.notification_channel_description"

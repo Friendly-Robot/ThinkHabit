@@ -3,6 +3,8 @@ package com.thinkhabit;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import com.google.android.gms.ads.MobileAds;
+import com.sbugert.rnadmob.RNAdMobPackage;
 import com.wenkesj.voice.VoicePackage;
 import com.dooboolab.RNIap.RNIapPackage;
 import com.imagepicker.ImagePickerPackage;
@@ -31,6 +33,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new RNAdMobPackage(),
             new VoicePackage(),
             new RNIapPackage(),
             new ImagePickerPackage(),
@@ -57,5 +60,6 @@ public class MainApplication extends Application implements ReactApplication {
   public void onCreate() {
     super.onCreate();
     SoLoader.init(this, /* native exopackage */ false);
+    MobileAds.initialize(this, "ca-app-pub-6795803926768626~8363743121");
   }
 }

@@ -15,6 +15,20 @@ import Aicon from 'react-native-vector-icons/FontAwesome';
 import { verticalScale } from 'react-native-size-matters';
 import Realm from 'realm';
 import Schema from '../../config/realm';
+import {
+  AdMobBanner,
+  // AdMobInterstitial,
+  // PublisherBanner,
+  // AdMobRewarded,
+} from 'react-native-admob'
+const AndroidAppId = 'ca-app-pub-6795803926768626~8363743121';
+const AndroidBannerId = 'ca-app-pub-6795803926768626/4542658436';
+
+const AdmobBannerTestUnitId = 'ca-app-pub-3940256099942544/6300978111';
+
+const AppleAppId = 'ca-app-pub-6795803926768626~7116194345';
+const AppleBannerId = 'ca-app-pub-6795803926768626/3608850712';
+
 
 
 export default class Habits extends React.PureComponent {
@@ -42,7 +56,6 @@ export default class Habits extends React.PureComponent {
       TNT: {},
       TND: {},
     }
-    console.log('HABITS HABITSEQ', props.habitSeq)
     this.navigateToBookmarks = this.navigateToBookmarks.bind(this);
     this.navigateToStem = this.navigateToStem.bind(this);
     this.toggleSettings = this.toggleSettings.bind(this);
@@ -1139,14 +1152,9 @@ class Habit extends React.PureComponent {
     return item.id;
   }
 
-  _renderItem({item}) {
-    const { 
-      addToQueue,
-      habit,
-      navigateToStem,
-      queue,
-      removeFromQueue,
-    } = this.props;
+  _renderItem({item, index}) {
+    const { addToQueue, habit, navigateToStem, queue, removeFromQueue } = this.props;
+    const showAd = index === 2 ? true : false;
     return (
       <StemCard
         addToQueue={addToQueue}
@@ -1154,6 +1162,7 @@ class Habit extends React.PureComponent {
         navigateToStem={navigateToStem}
         queue={queue}
         removeFromQueue={removeFromQueue}
+        showAd={showAd}
         stem={item}
         updateBookmarksPage={this.updateBookmarksPage}
       />
@@ -1174,6 +1183,7 @@ class StemCard extends React.PureComponent {
       handleRemoveFromQueue: () => this.handleRemoveFromQueue(),
     }
     this.state = {
+      adLoaded: false,
       favorite: false,
       realmStem: {},
       inQueue: props.queue.some(s => s.id === props.stem.id),
@@ -1190,13 +1200,89 @@ class StemCard extends React.PureComponent {
       // navigateToStem,
       // queue,
       // removeFromQueue,
+      showAd,
       stem,
       // updateBookmarksPage,
     } = this.props;
-    const { favorite, inQueue, realmStem } = this.state;
-    
+    const { adLoaded, favorite, inQueue, realmStem } = this.state;
     const reflect = Object.keys(realmStem).length && (realmStem['thoughts'].length && realmStem['reflections'].length === 0);
     
+    if (showAd) {
+      return (
+        <View style={stemStyles.bannerStem}>
+          <AdMobBanner
+            adSize="fullBanner"
+            adUnitID={AdmobBannerTestUnitId}
+            style={stemStyles.banner}
+            // testDevices={[AdMobBanner.simulatorId]}
+            onAdLoaded={() => this.setState({ adLoaded: true })}
+            onAdFailedToLoad={error => console.error(error)}
+          />
+
+          {
+            !adLoaded &&            
+            <View style={[stemStyles.container, stemStyles.bannerLoader]}>
+              <Text>{`                                                                               `}</Text>
+            </View>
+          }
+
+          <View style={[stemStyles.container, { width: '100%' }]}>
+            <TouchableOpacity
+              activeOpacity={.8}
+              hitSlop={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              onPress={this.toggleFavorite}
+              style={stemStyles.bookmarkContainer}
+            >
+              <Aicon name={'bookmark'} style={[stemStyles.bookmark, favorite && { color: colors.primary }]} />
+            </TouchableOpacity>
+            <View style={stemStyles.stemContainer}>
+              <Text style={stemStyles.stemUpper}>{ stem.stem.substr(0, stem.stem.indexOf(' ')) }</Text>
+              <Text style={stemStyles.stem}>{ stem.stem.substr(stem.stem.indexOf(' ')) }</Text>
+            </View>
+            <View style={stemStyles.bottomContainer}>
+              <View>
+                <Text style={stemStyles.thoughts}>
+                  { realmStem['thoughts'] && realmStem['thoughts'].length ? `${realmStem['thoughts'].length} ${realmStem['thoughts'].length === 1 ? 'thought' : 'thoughts'}` : null }
+                </Text>
+                <Text style={stemStyles.thoughts}>
+                  { realmStem['thoughts'] && (realmStem['thoughts'].length || realmStem['reflections'].length) ? `${realmStem['reflections'].length} ${realmStem['reflections'].length === 1 ? 'reflection' : 'reflections'}` : null }
+                </Text>
+              </View>
+              <View style={stemStyles.buttons}>
+                {
+                  inQueue ?
+                  <TouchableOpacity
+                    activeOpacity={.8}
+                    onPress={this.queueFuncs['handleRemoveFromQueue']}
+                    style={stemStyles.dotContainer}
+                  >
+                    <View style={stemStyles.dot}/>
+                    <View style={stemStyles.dot}/>
+                    <View style={stemStyles.dot}/>
+                  </TouchableOpacity>
+                  :
+                  <TouchableOpacity
+                    activeOpacity={.8}
+                    onPress={this.queueFuncs['handleAddToQueue']}
+                    style={[stemStyles.button, stemStyles.buttonBorder]}
+                  >
+                    <Text style={stemStyles.buttonText}>Queue</Text>
+                  </TouchableOpacity>
+                }
+
+                <TouchableOpacity
+                  activeOpacity={.8}
+                  onPress={this.handleThink}
+                  style={[stemStyles.button, stemStyles.buttonMain, reflect && stemStyles.completedButton]}
+                >
+                  <Text style={[stemStyles.buttonText, stemStyles.buttonMainText]}>{ reflect ? `Reflect` : `Think` }</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    }
     return (
       <View style={stemStyles.container}>
         <TouchableOpacity
@@ -1356,6 +1442,19 @@ class StemCard extends React.PureComponent {
 import { ScaledSheet } from 'react-native-size-matters';
 
 const stemStyles = ScaledSheet.create({
+  banner: {
+    marginBottom: '25@vs',
+  },
+  bannerLoader: {
+    // alignSelf: 'stretch',
+    backgroundColor: colors.grey,
+    width: '100%',
+  },
+  bannerStem: {
+    alignItems: 'center',
+    flex: 1,
+    width: '90%'
+  },
   bookmark: {
     color: colors.grey,
     fontSize: fonts.medium,
