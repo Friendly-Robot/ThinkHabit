@@ -496,14 +496,14 @@ export default class App extends React.Component {
         notification['reflectDate'] = Stem['reflectDate'];
         notification['thoughts'] = Stem['thoughts'];
         notification['reflections'] = Stem['reflections'];
-
+        notification['favorite'] = Stem['favorite']
+        notification['locked'] = Stem['locked']
         const navigateAction = NavigationActions.navigate({
           routeName: 'Stem',
           params: notification,
         });
         this.state.navigation.dispatch(navigateAction);
       } else {
-
         const navigateAction = NavigationActions.navigate({
           routeName: 'Stem',
           params: notification,
