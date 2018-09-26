@@ -13,6 +13,7 @@ import {
 import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
 import Lockscreen from '../../components/Lockscreen';
+import Message from '../../components/Message';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Communications from 'react-native-communications';
 import ImagePicker from 'react-native-image-picker';
@@ -33,6 +34,7 @@ export default class Settings extends React.PureComponent {
     this.updateSettings;
     this.state = {
       lockscreen: false,
+      message: null,
       name: props.name,
       passcode: props.passcode,
       passOnce: props.passOnce,
@@ -50,6 +52,7 @@ export default class Settings extends React.PureComponent {
     this.handleRating = this.handleRating.bind(this);
     this.handleSetPasscode = this.handleSetPasscode.bind(this);
     this.handleUpgrade = this.handleUpgrade.bind(this);
+    this.toggleMessage = this.toggleMessage.bind(this);
     this.togglePassOnce = this.togglePassOnce.bind(this);
     this.toggleSound = this.toggleSound.bind(this);
   }
@@ -68,6 +71,7 @@ export default class Settings extends React.PureComponent {
     
     const { 
       lockscreen,
+      message,
       name,
       passcode,
       passOnce,
@@ -78,111 +82,125 @@ export default class Settings extends React.PureComponent {
     } = this.state;
 
     return (
-      <ScrollView 
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <Header navigation={navigation} title={'Settings'} />
-        <TouchableOpacity
-          activeOpacity={.8}
-          onPress={this.handleImageSelection}
-          style={[styles.profileImage, !picture && { borderWidth: 1, borderColor: colors.darkGrey } ]}
+      <View>
+        <ScrollView 
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
         >
-          {
-            picture ?
-            <Image source={{uri: picture}} style={styles.picture} />
-            :
-            <Aicon name={'user'} style={styles.user} />
-          }
-        </TouchableOpacity>
-        <TextInput
-          keyboardType={'default'}
-          onChangeText={this.handleNameInput}
-          placeholder={'Your name'}
-          placeholderTextColor={colors.darkGrey}
-          returnKeyType='done'
-          selectionColor={'#FF9900'}
-          style={styles.input}
-          underlineColorAndroid={'#FFFFFF'}
-          value={name}
-        />
-        <TouchableOpacity
-          activeOpacity={.8}
-          onPress={this.handleContribution}
-          style={[styles.setting, styles.firstSetting]}
-        >
-          <Text style={styles.settingText}>Contribute a think habit</Text>
-        </TouchableOpacity>
-        <View style={styles.setting}>
-          <Text style={styles.settingText}>Notification sound</Text>
-          <Switch
-            onTintColor={colors.primary}
-            onValueChange={this.toggleSound}
-            thumbTintColor={colors.grey}
-            tintColor={colors.darkGrey}
-            value={sound}
+          <Header navigation={navigation} title={'Settings'} />
+          <TouchableOpacity
+            activeOpacity={.8}
+            onPress={this.handleImageSelection}
+            style={[styles.profileImage, !picture && { borderWidth: 1, borderColor: colors.darkGrey } ]}
+          >
+            {
+              picture ?
+              <Image source={{uri: picture}} style={styles.picture} />
+              :
+              <Aicon name={'user'} style={styles.user} />
+            }
+          </TouchableOpacity>
+          <TextInput
+            autoCorrect={false}
+            keyboardType={'default'}
+            onChangeText={this.handleNameInput}
+            placeholder={'Your name'}
+            placeholderTextColor={colors.darkGrey}
+            returnKeyType='done'
+            selectionColor={'#FF9900'}
+            style={styles.input}
+            underlineColorAndroid={'#FFFFFF'}
+            value={name}
           />
-        </View>
-        <View style={styles.setting}>
-          <Text style={styles.settingText}>Require passcode once</Text>
-          <Switch
-            onTintColor={colors.primary}
-            onValueChange={this.togglePassOnce}
-            thumbTintColor={colors.grey}
-            tintColor={colors.darkGrey}
-            value={passOnce}
-          />
-        </View>
-        <TouchableOpacity
-          activeOpacity={.8}
-          onPress={this.handlePasscode}
-          style={styles.setting}
-        >
-          <Text style={styles.settingText}>{ passcode ? 'Change passcode' : 'Setup passcode' }</Text>
-          <Aicon name={'lock'} style={styles.settingIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={.8}
-          onPress={this.handleRating}
-          style={styles.setting}
-        >
-          <Text style={styles.settingText}>Give us a quick rating</Text>
-          <Aicon name={'heart'} style={[styles.settingIcon, rated && { color: '#A83F39' }]} />
-        </TouchableOpacity>
-        {
-          premium ?
-          <View/>
-          :
-          <View style={styles.upgradeContainer}>
-            <View style={styles.perks}>
-              <View style={styles.priceContainer}>
-                <Text style={[styles.perky, { fontWeight: 'bold' }]}>Upgrade to premium version</Text>
-                <Text style={styles.perky}>$0.99</Text>
-              </View>
-              <Text style={styles.perky}>Unlock bookmarks queue</Text>
-              <Text style={styles.perky}>Support developer</Text>
-              <Text style={styles.perky}>Voice dictation</Text>
-              <Text style={styles.perky}>Remove ads</Text>
-            </View>
-            <TouchableOpacity
-              activeOpacity={.8}
-              onPress={this.handleUpgrade}
-              style={styles.upgradeButton}
-            >
-              <Text style={styles.upgradeText}>Upgrade</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={.8}
+            onPress={this.handleContribution}
+            style={[styles.setting, styles.firstSetting]}
+          >
+            <Text style={styles.settingText}>Contribute a think habit</Text>
+          </TouchableOpacity>
+          <View style={styles.setting}>
+            <Text style={styles.settingText}>Notification sound</Text>
+            <Switch
+              onTintColor={colors.primary}
+              onValueChange={this.toggleSound}
+              thumbTintColor={colors.grey}
+              tintColor={colors.darkGrey}
+              value={sound}
+            />
           </View>
-        }
-        { 
-          lockscreen && 
-          <Lockscreen 
-            closeLockscreen={this.closeLockscreen}
-            handleUnlock={this.handleSetPasscode}
-            message={passcode ? 'Enter current passcode' : 'Setup passcode'}
-            passcode={passcode}  
+          <View style={styles.setting}>
+            <Text style={styles.settingText}>Require passcode once</Text>
+            <Switch
+              onTintColor={colors.primary}
+              onValueChange={this.togglePassOnce}
+              thumbTintColor={colors.grey}
+              tintColor={colors.darkGrey}
+              value={passOnce}
+            />
+          </View>
+          <TouchableOpacity
+            activeOpacity={.8}
+            onPress={this.handlePasscode}
+            style={styles.setting}
+          >
+            <Text style={styles.settingText}>{ passcode ? 'Change passcode' : 'Setup passcode' }</Text>
+            <Aicon name={'lock'} style={styles.settingIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={.8}
+            onPress={this.handleRating}
+            style={styles.setting}
+          >
+            <Text style={styles.settingText}>Give us a quick rating</Text>
+            <Aicon name={'heart'} style={[styles.settingIcon, rated && { color: '#A83F39' }]} />
+          </TouchableOpacity>
+          {
+            premium ?
+            <View/>
+            :
+            <View style={styles.upgradeContainer}>
+              <View style={styles.perks}>
+                <View style={styles.priceContainer}>
+                  <Text style={[styles.perky, { fontWeight: 'bold' }]}>Upgrade to premium version</Text>
+                  <Text style={styles.perky}>$0.99</Text>
+                </View>
+                <Text style={styles.perky}>Unlock bookmarks queue</Text>
+                <Text style={styles.perky}>Support developer</Text>
+                <Text style={styles.perky}>Voice dictation</Text>
+                <Text style={styles.perky}>Remove ads</Text>
+              </View>
+              <TouchableOpacity
+                activeOpacity={.8}
+                onPress={this.handleUpgrade}
+                style={styles.upgradeButton}
+              >
+                <Text style={styles.upgradeText}>Upgrade</Text>
+              </TouchableOpacity>
+            </View>
+          }
+          { 
+            lockscreen && 
+            <Lockscreen 
+              closeLockscreen={this.closeLockscreen}
+              handleUnlock={this.handleSetPasscode}
+              message={passcode ? 'Enter current passcode' : 'Setup passcode'}
+              passcode={passcode}  
+            />
+          }
+        </ScrollView>
+        {
+          message &&
+          <Message
+            bodyStyle={message.bodyStyle}
+            closeFunc={this.toggleMessage}
+            duration={message.duration}
+            message={message.message}
+            textStyle={message.textStyle}
+            timeout={message.timeout}
           />
         }
-      </ScrollView>
+      </View>
     )
   }
 
@@ -254,6 +272,16 @@ export default class Settings extends React.PureComponent {
   togglePassOnce() {
     const { passOnce } = this.state;
     this.setState({ passOnce: !passOnce });
+    if (!passOnce === true) {
+      const message = {
+        bodyStyle: null,
+        duration: 500,
+        message: 'Private stems will only require unlocking once per session.',
+        textStyle: null,
+        timeout: 4500,
+      };
+      this.setState({ message });
+    }
     this.updateSettings = true;
   }
 
@@ -266,31 +294,58 @@ export default class Settings extends React.PureComponent {
   }
 
   handleSetPasscode(passcode) {
-    this.setState({ lockscreen: false, passcode });
+    this.setState({ lockscreen: false, passcode }, () => {
+      const message = {
+        bodyStyle: null,
+        duration: 500,
+        message: `Successfully set your new passcode: ${passcode}`,
+        textStyle: null,
+        timeout: 4500,
+      };
+      this.setState({ message });
+    });
     this.updateSettings = true;
   }
 
   handleRating() {
-    this.setState({ rated: true });
-    if (Platform.OS === 'ios') {
-      Linking.canOpenURL("itms-apps://itunes.apple.com/us/app/id${com.O2Balloons}?mt=8").then(supported => {
-        if (!supported) { 
-          // TODO Display a message
-          console.log('Can\'t open URL to App Store: ' + '');
-        } else {
-          return Linking.openURL("itms-apps://itunes.apple.com/us/app/id${com.O2Balloons}?mt=8");
-        }
-      }).catch(err => console.error('An error occurred opening App Store', err));
-    } else {
-      // TODO Make sure this works
-      Linking.canOpenURL("market://details?id=com.O2Balloons").then(supported => {
-        if (!supported) {
-          console.log('Can\'t open URL to Google Play: ' + '');
-        } else {
-          return Linking.openURL("market://details?id=com.O2Balloons");
-        }
-      }).catch(err => console.error('An error occurred opening Google Play', err));
+    const { name } = this.state;
+    let lover = '';
+    if (name) {
+      if (name.indexOf(' ') > 0) {
+        lover = name.substr(0, name.indexOf(' '));
+      } else {
+        lover = name;
+      }
     }
+    const message = {
+      bodyStyle: { backgroundColor: '#A83F39' },
+      duration: 250,
+      message: lover ? `Thank you, ${lover}!` : 'Thank you!',
+      textStyle: null,
+      timeout: 2000,
+    };
+    this.setState({ rated: true, message });
+    setTimeout(() => {
+      if (Platform.OS === 'ios') {
+        Linking.canOpenURL("itms-apps://itunes.apple.com/us/app/id${com.O2Balloons}?mt=8").then(supported => {
+          if (!supported) { 
+            // TODO Display a message
+            console.log('Can\'t open URL to App Store: ' + '');
+          } else {
+            return Linking.openURL("itms-apps://itunes.apple.com/us/app/id${com.O2Balloons}?mt=8");
+          }
+        }).catch(err => console.error('An error occurred opening App Store', err));
+      } else {
+        // TODO Make sure this works
+        Linking.canOpenURL("market://details?id=com.O2Balloons").then(supported => {
+          if (!supported) {
+            console.log('Can\'t open URL to Google Play: ' + '');
+          } else {
+            return Linking.openURL("market://details?id=com.O2Balloons");
+          }
+        }).catch(err => console.error('An error occurred opening Google Play', err));
+      }
+    }, 1200);
     this.updateSettings = true;
   }
 
@@ -298,12 +353,32 @@ export default class Settings extends React.PureComponent {
     // TODO Test on both platforms before release
     RNIap.buyProduct('com.ThinkHabit.premium').then(purchase => {
       console.log('Successfully purchased upgrade', purchase);
-      this.setState({ premium: true });
-      // TODO Thank the user!
+      const { name } = this.state;
+      let lover = '';
+      if (name) {
+        if (name.indexOf(' ') > 0) {
+          lover = name.substr(0, name.indexOf(' '));
+        } else {
+          lover = name;
+        }
+      }
+      const message = {
+        bodyStyle: { backgroundColor: '#A83F39' },
+        duration: 250,
+        message: lover ? `Thank you, ${lover}!` : 'Thank you!',
+        textStyle: null,
+        timeout: 4000,
+      };
+      this.setState({ message, premium: true });
+      // TODO Send a heart upwards
     }).catch(err => {
       console.warn('Error making upgrade purchase:', err);
     })
     this.updateSettings = true;
+  }
+
+  toggleMessage(message) {
+    this.setState({ message });
   }
 }
 
