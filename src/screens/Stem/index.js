@@ -11,6 +11,7 @@ import {
 import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
 import Lockscreen from '../../components/Lockscreen';
+import Message from '../../components/Message';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Micon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Swiper from 'react-native-swiper';
@@ -49,6 +50,7 @@ export default class Stem extends React.PureComponent {
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
       lockscreen: false,
       locked: props.navigation.state.params && typeof props.navigation.state.params.locked === 'boolean' ? props.navigation.state.params.locked : false,
+      message: null,
       recording: false,
       reflectCount: 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
@@ -87,6 +89,7 @@ export default class Stem extends React.PureComponent {
     this._keyboardWillShow = this._keyboardWillShow.bind(this);
     this._keyboardDidShow = this._keyboardDidShow.bind(this);
     this.handleVoiceRecord = this.handleVoiceRecord.bind(this);
+    this.toggleMessage = this.toggleMessage.bind(this);
     this.updateStem = this.updateStem.bind(this);
   }
 
@@ -109,6 +112,7 @@ export default class Stem extends React.PureComponent {
       keyboardShowing,
       locked,
       lockscreen,
+      message,
       recording,
       reflectCount,
       reflections,
@@ -318,6 +322,17 @@ export default class Stem extends React.PureComponent {
             passcode={passcode}  
           />
         }
+        {
+          message &&
+          <Message
+            bodyStyle={message.bodyStyle}
+            closeFunc={this.toggleMessage}
+            duration={message.duration}
+            message={message.message}
+            textStyle={message.textStyle}
+            timeout={message.timeout}
+          />
+        }
       </View>
     )
   }
@@ -488,7 +503,6 @@ export default class Stem extends React.PureComponent {
       if (this.state.unlocked === false || this.props.passed === false) {
         this.attemptingUnlock = true;
         this.displayLockscreen();
-        // TODO Handle updating state then after accessing with correct passcode.
         return;
       } else if (this.state.unlocked || this.props.passed) {
         this.setState({ locked: !locked });
@@ -557,11 +571,17 @@ export default class Stem extends React.PureComponent {
   }
 
   async _startRecognizing(e) {
-    // TODO !IMPORTANT Uncomment this before production
-    // if (!this.props.premium) {
-    //   // TODO Send a premium only message 
-    //   return;
-    // }
+    if (!this.props.premium) {
+      const message = {
+        bodyStyle: null,
+        duration: 500,
+        message: 'Upgrade to premium for access to voice dictation.',
+        textStyle: null,
+        timeout: 4500,
+      };
+      this.setState({ message });
+      return;
+    }
     try {
       await Voice.start('en-US');
       if (this.state.value) {
@@ -595,7 +615,11 @@ export default class Stem extends React.PureComponent {
     }
   }
 
-  updateStem() { console.log('UPDATE THE DAMN STEM', this.updatedLocked)
+  toggleMessage(message) {
+    this.setState({ message });
+  }
+
+  updateStem() {
     if (this.state.keyboardShowing) {
       this.setState({ keyboardShowing: false });
       Keyboard.dismiss();
