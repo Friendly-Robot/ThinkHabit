@@ -10,6 +10,7 @@ import {
 import Data from '../../config/data';
 import { colors, fonts, height } from '../../config/styles';
 import Header from '../../components/Header';
+import Message from '../../components/Message';
 import Swiper from 'react-native-swiper';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import { verticalScale } from 'react-native-size-matters';
@@ -49,6 +50,7 @@ export default class Habits extends React.PureComponent {
       habitSeq: [...props.habitSeq],
       index: 1,
       inProgress: props.currHabit === props.habitSeq[0],
+      message: null,
       refresh: null,
       repeat: props.repeat,
       save: false,
@@ -66,6 +68,7 @@ export default class Habits extends React.PureComponent {
     this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
     this.handleSettingsUpdate = this.handleSettingsUpdate.bind(this);
     this.scrollRight = this.scrollRight.bind(this);
+    this.toggleMessage = this.toggleMessage.bind(this);
   }
   render() {
     const {
@@ -96,6 +99,7 @@ export default class Habits extends React.PureComponent {
       habitSeq,
       index,
       inProgress,
+      message,
       refresh,
       repeat,
       save,
@@ -688,6 +692,17 @@ export default class Habits extends React.PureComponent {
             ))
           }
         </Swiper>
+        {
+          message &&
+          <Message
+            bodyStyle={message.bodyStyle}
+            closeFunc={this.toggleMessage}
+            duration={message.duration}
+            message={message.message}
+            textStyle={message.textStyle}
+            timeout={message.timeout}
+          />
+        }
       </View>
     )
   }
@@ -829,6 +844,10 @@ export default class Habits extends React.PureComponent {
       backgroundColor: colors.primary,
       height: this.animatedHeight,
     }
+  }
+
+  toggleMessage(message) {
+    this.setState({ message });
   }
 
   toggleSettings() {
@@ -990,6 +1009,16 @@ export default class Habits extends React.PureComponent {
   }
 
   handleSettingsUpdate() {
+    setTimeout(() => {
+      const message = {
+        bodyStyle: null,
+        duration: 500,
+        message: 'Successfully updated schedule.',
+        textStyle: null,
+        timeout: 4000,
+      };
+      this.setState({ message, premium: true });
+    }, 0);
     const { currHabit, habitSeq, updateHabitSettings } = this.props;
     const { 
       index,
