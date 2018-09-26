@@ -26,7 +26,9 @@ const AppleBannerId = 'ca-app-pub-6795803926768626/3608850712';
 
 const AdmobBannerTestUnitId = 'ca-app-pub-3940256099942544/6300978111';
 
-
+if (!__DEV__) {
+  console.log = () => {};
+}
 
 
 export default class Habits extends React.PureComponent {
@@ -1411,12 +1413,14 @@ class StemCard extends React.PureComponent {
       id: stem['id'],
       favorite,
       habit,
+      locked: false,
       stem: stem['stem'],
       thinkDate: 0,
       thoughts: [],
       reflectDate: 0,
       reflections: [],
     };
+    console.log('Create new Stem:', newStem);
     this.setState({ realmStem: newStem });
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
