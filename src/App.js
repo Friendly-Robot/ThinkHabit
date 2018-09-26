@@ -59,7 +59,10 @@ const HabitsNavigator = createStackNavigator({
         <Stem
           navigation={props.navigation}
           passcode={props.screenProps.Settings.passcode}
+          passed={props.screenProps.passed}
+          passOnce={props.screenProps.Settings.passOnce}
           premium={props.screenProps.Settings.premium}
+          updatePassed={props.screenProps.updatePassed}
           updateStemInRealm={props.screenProps.updateStemInRealm}
         />
       )
@@ -88,6 +91,7 @@ const AppNavigator = createDrawerNavigator({
           name={props.screenProps.Settings.name}
           navigation={props.navigation}
           passcode={props.screenProps.Settings.passcode}
+          passOnce={props.screenProps.Settings.passOnce}
           picture={props.screenProps.Settings.picture}
           premium={props.screenProps.Settings.premium}
           rated={props.screenProps.Settings.rated}
@@ -185,6 +189,7 @@ export default class App extends React.Component {
       appSet: false,
       navigation: null,
       notification: false,
+      passed: false,
       Settings: {},
       Confidence: {},
       Meditation: {},
@@ -199,6 +204,7 @@ export default class App extends React.Component {
     this.removeFromQueue = this.removeFromQueue.bind(this);    
     this.setHabitProgress = this.setHabitProgress.bind(this);
     this.updateHabitSettings = this.updateHabitSettings.bind(this);
+    this.updatePassed = this.updatePassed.bind(this);
     this.updateSettings = this.updateSettings.bind(this);
     this.updateStemInRealm = this.updateStemInRealm.bind(this);
     PushNotification.configure({
@@ -253,6 +259,7 @@ export default class App extends React.Component {
       appReady,
       appSet,
       notification,
+      passed,
       // queue,
       Settings,
       Confidence,
@@ -269,6 +276,7 @@ export default class App extends React.Component {
           appReady,
           appSet,
           notification,
+          passed,
 
           Settings,
           Confidence,
@@ -284,6 +292,7 @@ export default class App extends React.Component {
           removeFromQueue: this.removeFromQueue,
           setHabitProgress: this.setHabitProgress,
           updateHabitSettings: this.updateHabitSettings,
+          updatePassed: this.updatePassed,
           updateSettings: this.updateSettings,
           updateStemInRealm: this.updateStemInRealm,
         }}
@@ -399,6 +408,7 @@ export default class App extends React.Component {
           joinDate, 
           name: '', 
           passcode: '',
+          passOnce: true,
           picture: '',
           premium: false,
           queue: [],
@@ -424,6 +434,7 @@ export default class App extends React.Component {
         joinDate,
         name: '',
         passcode: '',
+        passOnce: true,
         picture: '',
         premium: false, // TODO Check IAP if purchase history found somehow?
         queue: [],
@@ -1055,6 +1066,7 @@ export default class App extends React.Component {
             Habit['completedStems'].unshift(id);
           }
           if (object['favorite'] !== Stem['favorite']) Stem['favorite'] = object['favorite'];
+          if (object['locked'] !== Stem['locked']) Stem['locked'] = object['locked'];
           if (object['thinkDate']) Stem['thinkDate'] = object['thinkDate'];
           if (object['reflectDate']) Stem['reflectDate'] = object['reflectDate'];
           if (object['thoughts']) Stem['thoughts'] = object['thoughts'];
@@ -1093,6 +1105,7 @@ export default class App extends React.Component {
       realm.write(() => {
         if (Settings['name'] !== settings['name']) Settings['name'] = settings['name'];
         if (Settings['passcode'] !== settings['passcode']) Settings['passcode'] = settings['passcode'];
+        if (Settings['passOnce'] !== settings['passOnce']) Settings['passOnce'] = settings['passOnce'];
         if (Settings['picture'] !== settings['picture']) Settings['picture'] = settings['picture'];
         if (Settings['premium'] !== settings['premium']) Settings['premium'] = settings['premium'];
         if (Settings['rated'] !== settings['rated']) Settings['rated'] = settings['rated'];
@@ -1103,5 +1116,9 @@ export default class App extends React.Component {
         this.setState({ Settings });
       });
     });
+  }
+
+  updatePassed() {
+    this.setState({ passed: true });
   }
 }
