@@ -302,7 +302,7 @@ export default class App extends React.Component {
 
   componentDidMount() {
     this.initializeApp();
-    setTimeout(() => this.setNextPushNotification(), 1000);
+    // setTimeout(() => this.setNextPushNotification(), 1000);
   }
   
   initializeApp() {
@@ -650,7 +650,7 @@ export default class App extends React.Component {
       }
 
       const multiply = reflectNotificationTime.length ? 2 : 1;
-      notification = queuedNotification;
+      notification = Object.assign({}, queuedNotification);
       if (queuedNotification.notified + 1 <= repeat * multiply) { // * multiply to factor in reflections
         Realm.open({schema: Schema, schemaVersion: 0})
         .then(realm => {
