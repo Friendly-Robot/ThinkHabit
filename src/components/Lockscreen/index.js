@@ -50,7 +50,7 @@ export default class Lockscreen extends React.PureComponent {
 
     return (
       <Modal
-        animationType="slide"
+        animationType="none"
         transparent={false}
         visible={visible}
         onRequestClose={closeLockscreen}
