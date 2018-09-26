@@ -1267,6 +1267,7 @@ class StemCard extends React.PureComponent {
           <AdMobBanner
             adSize={"banner"}
             adUnitID={AdmobBannerTestUnitId}
+            // adUnitID={AndroidBannerId}
             // TODO Set to Platform specific ad units for production
             style={stemStyles.banner}
             // testDevices={[AdMobBanner.simulatorId]}
