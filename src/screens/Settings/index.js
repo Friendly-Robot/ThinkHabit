@@ -372,6 +372,14 @@ export default class Settings extends React.PureComponent {
       this.setState({ message, premium: true });
       // TODO Send a heart upwards
     }).catch(err => {
+      const message = {
+        bodyStyle: null,
+        duration: 500,
+        message: 'Thank you for upgrading but something went wrong. Please try again later.',
+        textStyle: null,
+        timeout: 5500,
+      };
+      this.setState({ message });
       console.warn('Error making upgrade purchase:', err);
     })
     this.updateSettings = true;
