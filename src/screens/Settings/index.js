@@ -35,6 +35,7 @@ export default class Settings extends React.PureComponent {
       lockscreen: false,
       name: props.name,
       passcode: props.passcode,
+      passOnce: props.passOnce,
       picture: props.picture,
       premium: props.premium,
       products: null,
@@ -49,6 +50,7 @@ export default class Settings extends React.PureComponent {
     this.handleRating = this.handleRating.bind(this);
     this.handleSetPasscode = this.handleSetPasscode.bind(this);
     this.handleUpgrade = this.handleUpgrade.bind(this);
+    this.togglePassOnce = this.togglePassOnce.bind(this);
     this.toggleSound = this.toggleSound.bind(this);
   }
 
@@ -68,6 +70,7 @@ export default class Settings extends React.PureComponent {
       lockscreen,
       name,
       passcode,
+      passOnce,
       picture,
       premium,
       rated,
@@ -124,10 +127,10 @@ export default class Settings extends React.PureComponent {
           <Text style={styles.settingText}>Require passcode once</Text>
           <Switch
             onTintColor={colors.primary}
-            onValueChange={this.toggleSound}
+            onValueChange={this.togglePassOnce}
             thumbTintColor={colors.grey}
             tintColor={colors.darkGrey}
-            value={sound}
+            value={passOnce}
           />
         </View>
         <TouchableOpacity
@@ -245,6 +248,12 @@ export default class Settings extends React.PureComponent {
   toggleSound() {
     const { sound } = this.state;
     this.setState({ sound: !sound });
+    this.updateSettings = true;
+  }
+  
+  togglePassOnce() {
+    const { passOnce } = this.state;
+    this.setState({ passOnce: !passOnce });
     this.updateSettings = true;
   }
 
