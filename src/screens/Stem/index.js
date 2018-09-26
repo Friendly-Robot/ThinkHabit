@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  findNodeHandle,
   Keyboard,
   Platform,
   ScrollView,
@@ -16,8 +17,8 @@ import Aicon from 'react-native-vector-icons/FontAwesome';
 import Micon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Swiper from 'react-native-swiper';
 import { AutoGrowingTextInput } from 'react-native-autogrow-textinput';
-import { verticalScale } from 'react-native-size-matters';
 import Voice from 'react-native-voice';
+import { BlurView } from 'react-native-blur';
 import Realm from 'realm';
 import Schema from '../../config/realm';
 
@@ -38,7 +39,6 @@ export default class Stem extends React.PureComponent {
     this.updatedFavorite;
     this.updatedLocked;
     this.valueStore;
-    this.vs130 = verticalScale(130);
     Voice.onSpeechResults = this.onSpeechResults.bind(this);
     Voice.onSpeechPartialResults = this.onSpeechPartialResults.bind(this);
     this.state = {
@@ -58,6 +58,7 @@ export default class Stem extends React.PureComponent {
       thoughts: props.navigation.state.params && props.navigation.state.params.thoughts ? props.navigation.state.params.thoughts : [],
       unlocked: props.passed ? true : false,
       value: '',
+      viewRef: 1,
     }
     if (this.state.thoughts.length) {
       this.state.thoughts.map((thought) => {
@@ -120,6 +121,7 @@ export default class Stem extends React.PureComponent {
       thoughts,
       unlocked,
       value,
+      viewRef,
     } = this.state;
     
     const { 
@@ -133,15 +135,15 @@ export default class Stem extends React.PureComponent {
     } = this.props.navigation.state.params;
 
     const lockedStatus = locked && (!unlocked || (!passed && passOnce));
-    console.log('Stem "locked" value:', this.props.navigation.state.params.locked);
-    console.log('locked status:', lockedStatus);
-    console.log(`
-      locked status parameters: 
-      locked: ${locked}, 
-      !unlocked: ${!unlocked},
-      !passed: ${!passed}
-      !passOnce: ${!passOnce}
-    `);
+    // console.log('Stem "locked" value:', this.props.navigation.state.params.locked);
+    // console.log('locked status:', lockedStatus);
+    // console.log(`
+    //   locked status parameters: 
+    //   locked: ${locked}, 
+    //   !unlocked: ${!unlocked},
+    //   !passed: ${!passed}
+    //   !passOnce: ${!passOnce}
+    // `);
     return (
       <View style={styles.container}>
         <Header
@@ -188,84 +190,89 @@ export default class Stem extends React.PureComponent {
           </TouchableOpacity>
             { (keyboardShowing || lockedStatus) &&  <Text style={styles.count}>{ index === 0 ? thoughtCount : reflectCount }</Text> }
         </View>
+
         {
-          !keyboardShowing ?
-          lockedStatus ?
-            <Swiper
-              horizontal={true}
-              index={index}
-              loadMinimal={true}
-              loop={false}
-              onMomentumScrollEnd={this.handleSwiperUpdate}
-              ref={(ref) => this.swiper = ref}
-              showsPagination={false}
+          !keyboardShowing &&
+          lockedStatus &&
+          <View
+            pointerEvents={'box-none'}
+            style={styles.bigLockContainer}
+          >
+            <TouchableOpacity
+              activeOpacity={.8}
+              hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+              onPress={this.displayLockscreen}
+              style={styles.bigLockRadius}
             >
-              <TouchableOpacity
-                activeOpacity={.8}
-                onPress={this.displayLockscreen}
-                style={styles.bigLockContainer}
-              >
-                <Aicon name={'lock'} style={styles.bigLock} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={.8}
-                onPress={this.displayLockscreen}
-                style={styles.bigLockContainer}
-              >
-                <Aicon name={'lock'} style={styles.bigLock} />
-              </TouchableOpacity>
-            </Swiper>
-            :
-            <Swiper
-              horizontal={true}
-              index={index}
-              loadMinimal={true}
-              loop={false}
-              onMomentumScrollEnd={this.handleSwiperUpdate}
-              ref={(ref) => this.swiper = ref}
-              showsPagination={false}
-            >
-              <ScrollView 
-                contentContainerStyle={styles.scrollview}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.thoughts}>
-                  <Text style={styles.thoughtTitle}>Thoughts</Text>
-                  <Text style={styles.thoughtCount}>{ thoughts.length }</Text>
-                  {
-                    thoughts.map((thought, idx) => {
-                      const key = this.thoughtMap[thought] > 1 ? idx : thought; 
-                      return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
-                    })
-                  }
-                  {
-                    thinkDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(thinkDate) }</Text>
-                  }
-                </View>
-              </ScrollView>
-              <ScrollView 
-                contentContainerStyle={styles.scrollview}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.thoughts}>
-                  <Text style={styles.thoughtTitle}>Reflections</Text>
-                  <Text style={styles.thoughtCount}>{ reflections.length }</Text>
-                  {
-                    reflections.map((reflection, idx) => {
-                      const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
-                      return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
-                    })
-                  }
-                  {
-                    reflectDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(reflectDate) }</Text>
-                  }
-                </View>
-              </ScrollView>
-            </Swiper>
-          :
-          null
+              <Aicon name={'lock'} style={styles.bigLock} />
+            </TouchableOpacity>
+          </View>
         }
-        <View style={[styles.bottomView, keyboardShowing ? { flex: 1 } : { height: this.vs130 }]}>
+
+        {
+          !keyboardShowing && 
+          <Swiper
+            horizontal={true}
+            index={index}
+            loadMinimal={true}
+            loop={false}
+            onMomentumScrollEnd={this.handleSwiperUpdate}
+            ref={(ref) => {
+              this.swiper = ref;
+              this.setState({ viewRef: findNodeHandle(ref) })
+            }}
+            showsPagination={false}
+          >
+            <ScrollView 
+              contentContainerStyle={styles.scrollview}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.thoughts}>
+                <Text style={styles.thoughtTitle}>Thoughts</Text>
+                <Text style={styles.thoughtCount}>{ thoughts.length }</Text>
+                {
+                  thoughts.map((thought, idx) => {
+                    const key = this.thoughtMap[thought] > 1 ? idx : thought; 
+                    return (<Text key={key} style={styles.thought}>•  { thought }</Text>);
+                  })
+                }
+                {
+                  thinkDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(thinkDate) }</Text>
+                }
+              </View>
+            </ScrollView>
+            <ScrollView 
+              contentContainerStyle={styles.scrollview}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.thoughts}>
+                <Text style={styles.thoughtTitle}>Reflections</Text>
+                <Text style={styles.thoughtCount}>{ reflections.length }</Text>
+                {
+                  reflections.map((reflection, idx) => {
+                    const key = this.reflectionMap[reflection] > 1 ? idx : reflection; 
+                    return (<Text key={key} style={styles.thought}>•  { reflection }</Text>);
+                  })
+                }
+                {
+                  reflectDate > 1 && <Text style={styles.date}>{ this.getPrettyDate(reflectDate) }</Text>
+                }
+              </View>
+            </ScrollView>
+          </Swiper>
+        }
+
+        {
+          lockedStatus && 
+          <BlurView
+            style={styles.blurView}
+            viewRef={viewRef}
+            blurType={'light'}
+            blurAmount={10}
+          />
+        }
+
+        <View style={[styles.bottomView, keyboardShowing ? styles.keyboardShowing : styles.keyboardHidden]}>
           {
             keyboardShowing &&
             <AutoGrowingTextInput
@@ -711,8 +718,31 @@ const styles = ScaledSheet.create({
   },
   bigLockContainer: {
     alignItems: 'center',
-    flex: 1,
+    bottom: '70@vs',
     justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: '120@vs',
+    zIndex: 101,
+  },
+  bigLockRadius: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: colors.primary,
+    borderRadius: 100,
+    borderWidth: 1,
+    elevation: 2,
+    height: '75@ms',
+    justifyContent: 'center',
+    width: '75@ms',
+  },
+  blurView: {
+    bottom: 0, 
+    left: 0, 
+    position: 'absolute',
+    right: 0,
+    top: '120@vs', 
   },
   bookmark: {
     color: colors.grey,
@@ -775,7 +805,8 @@ const styles = ScaledSheet.create({
     alignSelf: 'stretch',
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: '10@vs',
+    paddingVertical: '10@vs',
+    zIndex: 101,
   },
   inactiveButton: {
     backgroundColor: colors.lightGrey,
@@ -793,8 +824,14 @@ const styles = ScaledSheet.create({
     borderBottomColor: colors.primary,
     borderBottomWidth: 1,
   },
+  keyboardHidden: {
+    height: '130@vs',
+  },
   keyboardPadding: {
     height: '250@vs',
+  },
+  keyboardShowing: {
+    flex: 1,
   },
   lockContainer: {
     position: 'absolute',
