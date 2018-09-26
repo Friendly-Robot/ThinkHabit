@@ -915,7 +915,7 @@ export default class App extends React.Component {
     Realm.open({schema: Schema, schemaVersion: 0})
     .then(realm => {
       realm.write(() => {
-        Settings['queue'][0]['date'] = queueItemDate;
+        if (Settings['queue'][0]) Settings['queue'][0]['date'] = queueItemDate;
       });
     });
 
