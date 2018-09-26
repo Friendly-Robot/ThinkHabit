@@ -1543,7 +1543,6 @@ const stemStyles = ScaledSheet.create({
     justifyContent: 'space-between',
     marginBottom: '25@vs',
     padding: '15@ms',
-    paddingRight: '30@ms',
     width: '90%',
   },
   dot: {
@@ -1585,6 +1584,7 @@ const stemStyles = ScaledSheet.create({
     color: colors.primary,
     fontSize: fonts.small,
     fontStyle: 'italic',
+    marginRight: '15@ms',
   },
 });
 
