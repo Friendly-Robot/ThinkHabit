@@ -3,6 +3,7 @@ package com.thinkhabit;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import com.cmcewen.blurview.BlurViewPackage;
 import com.google.android.gms.ads.MobileAds;
 import com.sbugert.rnadmob.RNAdMobPackage;
 import com.wenkesj.voice.VoicePackage;
@@ -32,6 +33,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new BlurViewPackage(),
             new RNAdMobPackage(),
             new VoicePackage(),
             new RNIapPackage(),
