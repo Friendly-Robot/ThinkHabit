@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { colors, fonts } from '../../config/styles';
 import Header from '../../components/Header';
+import Lockscreen from '../../components/Lockscreen';
 import Aicon from 'react-native-vector-icons/FontAwesome';
 import Micon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Swiper from 'react-native-swiper';
@@ -19,15 +20,22 @@ import Voice from 'react-native-voice';
 import Realm from 'realm';
 import Schema from '../../config/realm';
 
+if (!__DEV__) {
+  console.log = () => {};
+}
+
 
 export default class Stem extends React.PureComponent {
   constructor(props) {
     super(props);
+    this.attemptingUnlock;
+    this.internalLock;
     this.reflectionMap = {};
     this.thoughtMap = {};
     this.updatedThoughts;
     this.updatedReflections;
     this.updatedFavorite;
+    this.updatedLocked;
     this.valueStore;
     this.vs130 = verticalScale(130);
     Voice.onSpeechResults = this.onSpeechResults.bind(this);
@@ -39,11 +47,14 @@ export default class Stem extends React.PureComponent {
       favorite: props.navigation.state.params && typeof props.navigation.state.params.favorite === 'boolean' ? props.navigation.state.params.favorite : false,
       keyboardShowing: false,
       index: props.navigation.state.params && props.navigation.state.params.reflection ? 1 : 0,
+      lockscreen: false,
+      locked: props.navigation.state.params && typeof props.navigation.state.params.locked === 'boolean' ? props.navigation.state.params.locked : false,
       recording: false,
       reflectCount: 0,
       reflections: props.navigation.state.params && props.navigation.state.params.reflections ? props.navigation.state.params.reflections : [],
       thoughtCount: 0,
       thoughts: props.navigation.state.params && props.navigation.state.params.thoughts ? props.navigation.state.params.thoughts : [],
+      unlocked: props.passed ? true : false,
       value: '',
     }
     if (this.state.thoughts.length) {
@@ -64,10 +75,14 @@ export default class Stem extends React.PureComponent {
         }
       });
     }
+    this.closeLockscreen = this.closeLockscreen.bind(this);
+    this.displayLockscreen = this.displayLockscreen.bind(this);
     this.handleAdd = this.handleAdd.bind(this);
     this.handleFavorite = this.handleFavorite.bind(this);
     this.handleInput = this.handleInput.bind(this);
+    this.handleLocked = this.handleLocked.bind(this);
     this.handleSwiperUpdate = this.handleSwiperUpdate.bind(this);
+    this.handleUnlock = this.handleUnlock.bind(this);
     this._keyboardDidHide = this._keyboardDidHide.bind(this);
     this._keyboardWillShow = this._keyboardWillShow.bind(this);
     this._keyboardDidShow = this._keyboardDidShow.bind(this);
@@ -78,7 +93,11 @@ export default class Stem extends React.PureComponent {
   render() {
     const {
       navigation,
+      passcode,
+      passed,
+      passOnce,
       premium,
+      // updatePassed,
       // updateStemInRealm,
     } = this.props;
 
@@ -88,16 +107,20 @@ export default class Stem extends React.PureComponent {
       favorite,
       index,
       keyboardShowing,
+      locked,
+      lockscreen,
       recording,
       reflectCount,
       reflections,
       thoughtCount,
       thoughts,
+      unlocked,
       value,
     } = this.state;
     
     const { 
       id,
+      // locked,
       thinkDate,
       reflectDate,
       stem,
@@ -105,6 +128,16 @@ export default class Stem extends React.PureComponent {
       updateRealmStem, // Spread this prop to check whether Stem was open from notification or Habits screen to force update on back press if notification.
     } = this.props.navigation.state.params;
 
+    const lockedStatus = locked && (!unlocked || (!passed && passOnce));
+    console.log('Stem "locked" value:', this.props.navigation.state.params.locked);
+    console.log('locked status:', lockedStatus);
+    console.log(`
+      locked status parameters: 
+      locked: ${locked}, 
+      !unlocked: ${!unlocked},
+      !passed: ${!passed}
+      !passOnce: ${!passOnce}
+    `);
     return (
       <View style={styles.container}>
         <Header
@@ -119,6 +152,16 @@ export default class Stem extends React.PureComponent {
         </View>
         <View style={styles.dots}>
           { keyboardShowing && <Text style={styles.yourThought}>Your thought</Text> }
+          { !keyboardShowing &&
+            <TouchableOpacity
+              activeOpacity={.8}
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+              onPress={this.handleLocked}
+              style={styles.lockContainer}
+            >
+              <Aicon name={'lock'} style={[styles.bookmark, locked && { color: colors.primary }]} />
+            </TouchableOpacity>
+          }
           <TouchableOpacity
             activeOpacity={.8}
             hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
@@ -139,10 +182,36 @@ export default class Stem extends React.PureComponent {
           >
             <Aicon name={'bookmark'} style={[styles.bookmark, favorite && { color: colors.primary }]} />
           </TouchableOpacity>
-            { keyboardShowing && <Text style={styles.count}>{ index === 0 ? thoughtCount : reflectCount }</Text> }
+            { (keyboardShowing || lockedStatus) &&  <Text style={styles.count}>{ index === 0 ? thoughtCount : reflectCount }</Text> }
         </View>
         {
-          !keyboardShowing && (
+          !keyboardShowing ?
+          lockedStatus ?
+            <Swiper
+              horizontal={true}
+              index={index}
+              loadMinimal={true}
+              loop={false}
+              onMomentumScrollEnd={this.handleSwiperUpdate}
+              ref={(ref) => this.swiper = ref}
+              showsPagination={false}
+            >
+              <TouchableOpacity
+                activeOpacity={.8}
+                onPress={this.displayLockscreen}
+                style={styles.bigLockContainer}
+              >
+                <Aicon name={'lock'} style={styles.bigLock} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={.8}
+                onPress={this.displayLockscreen}
+                style={styles.bigLockContainer}
+              >
+                <Aicon name={'lock'} style={styles.bigLock} />
+              </TouchableOpacity>
+            </Swiper>
+            :
             <Swiper
               horizontal={true}
               index={index}
@@ -189,7 +258,8 @@ export default class Stem extends React.PureComponent {
                 </View>
               </ScrollView>
             </Swiper>
-          )
+          :
+          null
         }
         <View style={[styles.bottomView, keyboardShowing ? { flex: 1 } : { height: this.vs130 }]}>
           {
@@ -239,6 +309,15 @@ export default class Stem extends React.PureComponent {
           </TouchableOpacity>
         </View>
         { Platform.OS === 'ios' && keyboardShowing && <View style={{ height: this.keyboardHeight }} /> }
+        { 
+          lockscreen && 
+          <Lockscreen 
+            closeLockscreen={this.closeLockscreen}
+            handleUnlock={this.handleUnlock}
+            message={'Enter passcode'}
+            passcode={passcode}  
+          />
+        }
       </View>
     )
   }
@@ -255,12 +334,12 @@ export default class Stem extends React.PureComponent {
       1: () => this.handleDot(1),
     }
     this.setState({ dotFuncs });
-    this.checkExistsAndSetFavorite();
+    this.checkExistsAndSetFavoriteAndLocked();
     this.mounted = true;
   }
 
   componentWillUnmount() {
-    if (this.updatedFavorite || this.updatedThoughts || this.updatedReflections) {
+    if (this.updatedFavorite || this.updatedThoughts || this.updatedReflections || this.updatedLocked) {
       this.updateStem();
     }
     this.mounted = false;
@@ -370,21 +449,56 @@ export default class Stem extends React.PureComponent {
     }
   }
 
-  checkExistsAndSetFavorite() {
+  checkExistsAndSetFavoriteAndLocked() {
     const { id } = this.props.navigation.state.params;
     Realm.open({ schema: Schema, schemaVersion: 0})
     .then(realm => {
       const Stem = realm.objectForPrimaryKey('Stem', id);
       if (Stem) {
-        if (Stem['favorite']) {
-          this.setState({ favorite: Stem['favorite'], exists: true });
-        } else {
-          this.setState({ exists: true });
-        }
+        this.setState({ favorite: Stem['favorite'], locked: Stem['locked'], exists: true });
       } else {
         this.setState({ exists: false });
       }
     });
+  }
+
+  closeLockscreen() {
+    this.setState({ lockscreen: false });
+  }
+
+  handleUnlock() {
+    this.setState({ unlocked: true, lockscreen: false });
+    if (this.props.passOnce) {
+      this.props.updatePassed();
+    }
+    if (this.attemptingUnlock) {
+      this.setState({ locked: !this.state.locked });
+      this.updatedLocked = true;
+      this.attemptingUnlock = false;
+    }
+  }
+
+  displayLockscreen() {
+    this.setState({ lockscreen: true });
+  }
+
+  handleLocked() {
+    const { locked } = this.state;
+    if (locked && !this.internalLock) {
+      if (this.state.unlocked === false || this.props.passed === false) {
+        this.attemptingUnlock = true;
+        this.displayLockscreen();
+        // TODO Handle updating state then after accessing with correct passcode.
+        return;
+      } else if (this.state.unlocked || this.props.passed) {
+        this.setState({ locked: !locked });
+        this.updatedLocked = true;
+        return;
+      }
+    }
+    this.internalLock = true;
+    this.setState({ locked: !locked });
+    this.updatedLocked = true;
   }
 
   handleFavorite() {
@@ -481,16 +595,17 @@ export default class Stem extends React.PureComponent {
     }
   }
 
-  updateStem() {
+  updateStem() { console.log('UPDATE THE DAMN STEM', this.updatedLocked)
     if (this.state.keyboardShowing) {
       this.setState({ keyboardShowing: false });
       Keyboard.dismiss();
     }
-    const { favorite, index, value } = this.state;
+    const { favorite, index, locked, value } = this.state;
     const { thoughts, reflections } = this.state;
     let updatedThoughts = [];
     let updatedReflections = [];
-    if ((!this.updatedThoughts && !this.updatedReflections) && !value && !this.updatedFavorite) {
+    if ((!this.updatedThoughts && !this.updatedReflections) && !value && !this.updatedFavorite && !this.updatedLocked) {
+      console.log('NOT SAVING THIS STEM')
       return;
     } else if ((!this.updatedThoughts || !this.updatedReflections) && value) {
       if (index === 0) {
@@ -530,25 +645,26 @@ export default class Stem extends React.PureComponent {
         updatedStem['reflectDate'] = date;
       }
       updatedStem['favorite'] = favorite;
+      updatedStem['locked'] = locked;
       if (this.updatedThoughts) updatedStem['thoughts'] = updatedThoughts;
       if (this.updatedReflections) updatedStem['reflections'] = updatedReflections;
+      console.log('Updating existing Stem:', updatedStem)
       updateStemInRealm(params['id'], updatedStem, 'update');
     } else {
       const newStem = {
         id: params['id'],
         favorite,
         habit: params['habit'],
+        locked,
         stem: params['stem'],
         thinkDate: this.updatedThoughts ? date : 0,
         thoughts: updatedThoughts,
         reflectDate: this.updatedReflections ? date : 0,
         reflections: updatedReflections,
       };
+      console.log('Creating new Stem:', newStem)
       updateStemInRealm(params['id'], newStem, 'new');
     }
-    this.updatedReflections = false;
-    this.updatedThoughts = false;
-    this.updatedFavorite = false;
     this.props.navigation.state.params && this.props.navigation.state.params.updateRealmStem && this.props.navigation.state.params.updateRealmStem();
   }
 }
@@ -564,6 +680,15 @@ const styles = ScaledSheet.create({
     bottom: '15@vs',
     position: 'absolute',
     right: '15@ms',
+  },
+  bigLock: {
+    color: colors.primary,
+    fontSize: '50@ms',
+  },
+  bigLockContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
   bookmark: {
     color: colors.grey,
@@ -646,6 +771,10 @@ const styles = ScaledSheet.create({
   },
   keyboardPadding: {
     height: '250@vs',
+  },
+  lockContainer: {
+    position: 'absolute',
+    left: '20@ms',
   },
   scrollview: {
     alignItems: 'center',
