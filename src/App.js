@@ -302,7 +302,7 @@ export default class App extends React.Component {
 
   componentDidMount() {
     this.initializeApp();
-    // setTimeout(() => this.setNextPushNotification(), 1000);
+    setTimeout(() => this.setNextPushNotification(), 1000);
   }
   
   initializeApp() {
@@ -520,6 +520,92 @@ export default class App extends React.Component {
     }, 2000);
   }
 
+  setBufferNotifications(date) {
+    const stems = [];
+    const { Settings } = this.state;
+    const { currHabit, currStem, thinkNotificationTime, thinkNotificationDay, sound } = Settings;
+    let count = 0;
+    let stem = currStem;
+    while (count < 15) {
+      const newStem = this.addNewStemToQueue(currHabit, stem, true);
+      stem = newStem[0]['id'];
+      stems.push(newStem[0]);
+      count += 1;
+    }
+    let nextQueuedDate = date;
+    let nextQueuedDay = date.getDay();
+    let nextQueuedHour = date.getHours();
+    let title = '';
+    const millisecondsLeftInHour = (60 - date.getMinutes()) * 60 * 1000;
+    const millisecondsInHour = 3600000;
+    const millisecondsInDay = 86400000;
+    const thinkTitles = ['Food for thought', currHabit, 'Complete this sentence', `Build a ${currHabit.toLowerCase()} mindset`];
+    stems.map(stem => {
+      nextQueuedDate = this.getNextNotificationDate(nextQueuedDate, nextQueuedDay, nextQueuedHour, thinkNotificationTime, thinkNotificationDay, millisecondsLeftInHour, millisecondsInHour, millisecondsInDay);
+      nextQueuedDay = nextQueuedDate.getDay();
+      nextQueuedHour = nextQueuedDate.getHours();
+      console.log('Next Queued Date/Day/Hour', nextQueuedDate, nextQueuedDay, nextQueuedHour)
+      title = thinkTitles[Math.floor(Math.random() * thinkTitles.length)];
+      this.scheduleNotification(nextQueuedDate, stem, title, stem.stem, sound);
+    });
+  }
+
+  getNextNotificationDate(startDate, startDay, startHour, thinkNotificationTime, thinkNotificationDay, millisecondsLeftInHour, millisecondsInHour, millisecondsInDay) {
+    let nextThinkNotificationTime;
+    thinkNotificationTime.some((hour) => {
+      if (hour > startHour) {
+        nextThinkNotificationTime = hour;
+        return true;
+      }
+    });
+    if (!nextThinkNotificationTime) {
+      nextThinkNotificationTime = thinkNotificationTime[0];
+    }
+    let sameThinkDay;
+    let nextThinkDay;
+    let daySought;
+    if (startDay < thinkNotificationDay[thinkNotificationDay.length - 1]) {
+      daySought = 'greater';
+    } else {
+      daySought = 'least';
+    }
+    thinkNotificationDay.map((day) => {
+      if (day === startDay) {
+        if (nextThinkNotificationTime > startHour) {
+          sameThinkDay = true;
+        }
+      }
+    });
+    if (!sameThinkDay) {
+      if (daySought === 'least') {
+        nextThinkDay = thinkNotificationDay[0];
+      } else if (daySought === 'greater') {
+        thinkNotificationDay.some((day) => {
+          if (day > startDay) {
+            nextThinkDay = day;
+            return true;
+          }
+        });
+      }
+      nextThinkNotificationTime = thinkNotificationTime[0];
+    }
+    if (sameThinkDay) {
+      const timeBetween = nextThinkNotificationTime - startHour;
+      millisecondsTillNextNotification = (timeBetween * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+      console.log('SameThinkDay nextThinkNotificationTime of next queued item', millisecondsTillNextNotification);
+    } else if (nextThinkDay) {
+      const millisecondsLeftInDay = ((24 - startHour) * millisecondsInHour) - (millisecondsInHour - millisecondsLeftInHour);
+      if (daySought === 'least') {
+        millisecondsTillNextNotification = millisecondsLeftInDay + (((7 - startDay) * millisecondsInDay) + (nextThinkDay * millisecondsInDay)) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
+        console.log('daySought === "least" &&  nextThinkDay of next queued item', millisecondsTillNextNotification);        
+      } else if (daySought === 'greater') {
+        millisecondsTillNextNotification = millisecondsLeftInDay + ((nextThinkDay - startDay) * millisecondsInDay) - ((millisecondsInDay) - (nextThinkNotificationTime * millisecondsInHour));
+        console.log('daySought === "greater" && nextThinkDay of next queued item', millisecondsTillNextNotification);
+      }
+    }
+    return new Date(startDate.getTime() + millisecondsTillNextNotification);
+  }
+
   setNextPushNotification(queuedStem) {
     PushNotification.cancelAllLocalNotifications();
     const { Settings } = this.state;
@@ -544,7 +630,7 @@ export default class App extends React.Component {
           newQueue = this.addNewBookmarksToQueue(currStem);
         } else {
           // Populate newQueue with notifications
-          newQueue = this.addNewStemsToQueue(currHabit, currStem);
+          newQueue = this.addNewStemToQueue(currHabit, currStem);
           if (newQueue.length === 0) {
             // TODO How to handle when user is finished with this think habit?
             // TODO Notify the user that they've finished this think habit
@@ -821,6 +907,7 @@ export default class App extends React.Component {
     console.log('millisecondsTillNextNotification', millisecondsTillNextNotification)
 
     const dateOfNotification = new Date(Date.now() + millisecondsTillNextNotification);
+    this.setBufferNotifications(dateOfNotification);
     const queueItemDate = dateOfNotification.getTime();
 
     console.log('date of notification', dateOfNotification)
@@ -836,6 +923,10 @@ export default class App extends React.Component {
       notification['reflection'] = true;
     }
 
+    this.scheduleNotification(dateOfNotification, notification, title, notification.stem, sound);
+  }
+
+  scheduleNotification(date, tag, title, message, sound) {
     PushNotification.localNotificationSchedule({
       /* Android Only Properties */
       // id: '0', // (optional) Valid unique 32 bit integer specified as string. default: Autogenerated Unique ID
@@ -848,7 +939,7 @@ export default class App extends React.Component {
       // color: "red", // (optional) default: system default
       vibrate: true, // (optional) default: true
       vibration: 300, // vibration length in milliseconds, ignored if vibrate=false, default: 1000
-      tag: notification, // (optional) add tag to message
+      tag, // (optional) add tag to message
       // group: "group", // (optional) add group to message
       // ongoing: false, // (optional) set whether this is an "ongoing" notification
       priority: "high", // (optional) set notification priority, default: high
@@ -861,8 +952,8 @@ export default class App extends React.Component {
       // userInfo: // (optional) default: null (object containing additional notification data)
 
       /* iOS and Android properties */
-      title: title, // (optional)
-      message: notification.stem, // (required)
+      title, // (optional)
+      message, // (required)
       playSound: sound, // (optional) default: true
       soundName: 'default', // (optional) Sound to play when the notification is shown. Value of 'default' plays the default sound. It can be set to a custom sound such as 'android.resource://com.xyz/raw/my_sound'. It will look for the 'my_sound' audio file in 'res/raw' directory and play it. default: 'default' (default sound is played)
       // number: '10', // (optional) Valid 32 bit integer specified as string. default: none (Cannot be zero)
@@ -870,7 +961,7 @@ export default class App extends React.Component {
       repeatTime: 86400000,
       // actions: '["Later", "Think"]',  // (Android only) See the doc for notification actions to know more
 
-      date: dateOfNotification, 
+      date, 
       // date: new Date(Date.now() + 1000),
     });
   }
@@ -951,7 +1042,7 @@ export default class App extends React.Component {
     return [stem];
   }
 
-  addNewStemsToQueue(currHabit, currStem) {
+  addNewStemToQueue(currHabit, currStem, buffer) {
     let currStemIndex = 0;
     Data[currHabit].some((stem, idx) => {
       if (currStem === stem['id']) {
@@ -973,7 +1064,7 @@ export default class App extends React.Component {
       stem: Data[currHabit][nextIndex]['stem'],
       habit: currHabit,
     };
-    this.updateCurrStem(id);
+    if (!buffer) this.updateCurrStem(id);
     return [stem];
   }
 
