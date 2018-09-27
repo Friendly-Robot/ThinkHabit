@@ -24,6 +24,11 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 
+# Pod
+GoogleMobileAds.framework
+Pods
+
+
 # Android/IntelliJ
 #
 build/
